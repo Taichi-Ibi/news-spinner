@@ -47,8 +47,8 @@ echo "pool.json and history.json initialized"
 # 6. Install Claude Code skill
 SKILL_DIR="$CLAUDE_DIR/skills/news-fetch"
 mkdir -p "$SKILL_DIR"
-if [ -f "$SCRIPT_DIR/skills/news-fetch/SKILL.md" ]; then
-  cp "$SCRIPT_DIR/skills/news-fetch/SKILL.md" "$SKILL_DIR/SKILL.md"
+if [ -f "$SCRIPT_DIR/SKILL.md" ]; then
+  cp "$SCRIPT_DIR/SKILL.md" "$SKILL_DIR/SKILL.md"
   echo "Skill /news-fetch installed"
 fi
 
