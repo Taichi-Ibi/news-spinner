@@ -9,35 +9,35 @@ disable-model-invocation: true
 allowed-tools: Bash, AskUserQuestion
 ---
 
-# NewsSpinner — ニュースフィード管理
+# NewsSpinner — News Feed Management
 
-Claude Code の spinner（推論中テキスト）を Google News ヘッドラインに置き換える。
+Replace Claude Code's spinner text with Google News headlines.
 
-## 現在の状態
+## Current Status
 
-登録済みフィード:
-!`bash ~/.newsspinner/bin/fetch.sh list 2>/dev/null || echo "未インストール"`
+Registered feeds:
+!`bash ~/.newsspinner/bin/fetch.sh list 2>/dev/null || echo "Not installed"`
 
-プール残数:
+Pool remaining:
 !`jq 'length' ~/.newsspinner/pool.json 2>/dev/null || echo "0"`
 
-## 前提チェック
+## Prerequisites
 
-スクリプトが `~/.newsspinner/bin/` に存在しない場合、以下を案内して終了:
+If scripts are missing from `~/.newsspinner/bin/`, guide the user to run:
 
 ```
 bash ${CLAUDE_SKILL_DIR}/bin/install.sh
 ```
 
-## 動作
+## Behavior
 
-### 引数なし (`$ARGUMENTS` が空)
+### No arguments (`$ARGUMENTS` is empty)
 
-AskUserQuestion でユーザーに操作を選ばせる:
-1. フィードを追加 → キーワードを聞いてから `add` を実行
-2. フィードを削除 → 登録済み一覧を見せて選ばせる
-3. フィード一覧表示
-4. ニュースを取得 (fetch)
+Use AskUserQuestion to let the user choose an action:
+1. Add a feed — ask for a keyword, then run `add`
+2. Remove a feed — show the current list and let them choose
+3. List feeds
+4. Fetch headlines
 
 ### `add <keyword>`
 
@@ -45,8 +45,10 @@ AskUserQuestion でユーザーに操作を選ばせる:
 bash ~/.newsspinner/bin/fetch.sh add "$1"
 ```
 
-- 登録後「すぐに fetch するか？」を確認
-- fetch する場合: `bash ~/.newsspinner/bin/fetch.sh`
+- After adding, ask "Fetch headlines now?" and run fetch if yes:
+  ```bash
+  bash ~/.newsspinner/bin/fetch.sh
+  ```
 
 ### `remove <keyword>`
 
@@ -66,12 +68,12 @@ bash ~/.newsspinner/bin/fetch.sh list
 bash ~/.newsspinner/bin/fetch.sh
 ```
 
-## エラー時
+## Error Handling
 
-- コマンド失敗時はエラー内容を表示し、考えられる原因を伝える
-- `jq` / `curl` 未インストール → `install.sh` を案内
-- ネットワークエラー → 接続確認を促す
-- config.json 破損 → デフォルトで再作成する手順を案内:
+- Command failure: show the error output and suggest likely causes
+- `jq` / `curl` not installed: guide user to run `install.sh`
+- Network error: suggest checking connectivity
+- Corrupted config.json: restore from default:
   ```bash
   cp ${CLAUDE_SKILL_DIR}/config.json ~/.newsspinner/config.json
   ```

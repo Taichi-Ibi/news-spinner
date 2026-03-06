@@ -6,47 +6,44 @@ SETTINGS="$HOME/.claude/settings.json"
 
 echo "=== NewsSpinner Uninstaller ==="
 
-# 1. Remove skill
+# 1. Remove Claude Code skill
 SKILL_DIR="$HOME/.claude/skills/news-fetch"
 if [ -d "$SKILL_DIR" ]; then
   rm -rf "$SKILL_DIR"
-  echo "Skill /news-fetch removed"
+  echo "[1/3] Skill /news-fetch removed"
+else
+  echo "[1/3] Skill directory not found, skipping"
 fi
 
-# 2. Update settings.json if it exists
+# 2. Clean up settings.json
 if [ -f "$SETTINGS" ]; then
-  # Backup
   cp "$SETTINGS" "$SETTINGS.bak.$(date +%Y%m%d%H%M%S)"
-  echo "settings.json backed up"
 
-  # Remove hook entries containing "newsspinner" from PostToolUse
   jq '
+    # Remove hook entries containing "newsspinner"
     if .hooks.PostToolUse then
       .hooks.PostToolUse = [
         .hooks.PostToolUse[] |
-        select(
-          (.hooks // []) | all(.command // "" | contains("newsspinner") | not)
-        )
+        select((.hooks // []) | all(.command // "" | contains("newsspinner") | not))
       ]
     else . end |
-    # Clean up empty PostToolUse array
+    # Clean up empty arrays/objects
     if (.hooks.PostToolUse // []) | length == 0 then del(.hooks.PostToolUse) else . end |
-    # Clean up empty hooks object
     if (.hooks // {}) | length == 0 then del(.hooks) else . end |
-    # Remove spinnerVerbs
+    # Remove spinnerVerbs override
     del(.spinnerVerbs)
   ' "$SETTINGS" > "$SETTINGS.tmp" && mv "$SETTINGS.tmp" "$SETTINGS"
-  echo "Hook and spinnerVerbs removed from settings.json"
+  echo "[2/3] Hook and spinnerVerbs removed from settings.json"
 else
-  echo "settings.json not found, skipping"
+  echo "[2/3] settings.json not found, skipping"
 fi
 
-# 3. Remove NewsSpinner directory
+# 3. Remove data directory
 if [ -d "$SPINNER_DIR" ]; then
   rm -rf "$SPINNER_DIR"
-  echo "Removed $SPINNER_DIR"
+  echo "[3/3] Removed $SPINNER_DIR"
 else
-  echo "$SPINNER_DIR not found, skipping"
+  echo "[3/3] $SPINNER_DIR not found, skipping"
 fi
 
 echo ""

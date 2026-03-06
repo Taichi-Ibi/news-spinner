@@ -9,61 +9,68 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 echo "=== NewsSpinner Installer ==="
 
 # 1. Check dependencies
+missing=()
 for cmd in jq curl; do
   if ! command -v "$cmd" > /dev/null 2>&1; then
-    echo "Error: '$cmd' is required but not found. Please install it." >&2
-    exit 1
+    missing+=("$cmd")
   fi
 done
-echo "Dependencies OK (jq, curl)"
+if [ "${#missing[@]}" -gt 0 ]; then
+  echo "Error: missing required dependencies: ${missing[*]}" >&2
+  echo "Please install them and try again." >&2
+  exit 1
+fi
+echo "[1/7] Dependencies OK (jq, curl)"
 
 # 2. Create directories
 mkdir -p "$SPINNER_DIR/bin"
 mkdir -p "$CLAUDE_DIR"
-echo "Directories created"
+echo "[2/7] Directories created"
 
 # 3. Copy scripts and set permissions
 for script in fetch.sh rotate.sh install.sh uninstall.sh; do
-  if [ -f "$SCRIPT_DIR/bin/$script" ]; then
-    cp "$SCRIPT_DIR/bin/$script" "$SPINNER_DIR/bin/$script"
+  src="$SCRIPT_DIR/bin/$script"
+  if [ -f "$src" ]; then
+    cp "$src" "$SPINNER_DIR/bin/$script"
     chmod +x "$SPINNER_DIR/bin/$script"
+  else
+    echo "Warning: $src not found, skipping" >&2
   fi
 done
-echo "Scripts installed"
+echo "[3/7] Scripts installed to $SPINNER_DIR/bin/"
 
-# 4. Create config.json if not exists
+# 4. Create config.json (preserve existing)
 if [ ! -f "$SPINNER_DIR/config.json" ]; then
   cp "$SCRIPT_DIR/config.json" "$SPINNER_DIR/config.json"
-  echo "Default config.json created"
+  echo "[4/7] Default config.json created"
 else
-  echo "config.json already exists, skipping"
+  echo "[4/7] config.json already exists, keeping current"
 fi
 
-# 5. Initialize pool.json and history.json
-[ -f "$SPINNER_DIR/pool.json" ] || echo '[]' > "$SPINNER_DIR/pool.json"
+# 5. Initialize data files
+[ -f "$SPINNER_DIR/pool.json" ]    || echo '[]' > "$SPINNER_DIR/pool.json"
 [ -f "$SPINNER_DIR/history.json" ] || echo '[]' > "$SPINNER_DIR/history.json"
-echo "pool.json and history.json initialized"
+echo "[5/7] Data files initialized"
 
 # 6. Install Claude Code skill
 SKILL_DIR="$CLAUDE_DIR/skills/news-fetch"
 mkdir -p "$SKILL_DIR"
 if [ -f "$SCRIPT_DIR/SKILL.md" ]; then
   cp "$SCRIPT_DIR/SKILL.md" "$SKILL_DIR/SKILL.md"
-  echo "Skill /news-fetch installed"
+  echo "[6/7] Skill /news-fetch installed"
+else
+  echo "[6/7] Warning: SKILL.md not found, skipping" >&2
 fi
 
-# 7. Add PostToolUse hook to settings.json
+# 7. Register PostToolUse hook in settings.json
 if [ ! -f "$SETTINGS" ]; then
   echo '{}' > "$SETTINGS"
 fi
 
-# Backup settings
 cp "$SETTINGS" "$SETTINGS.bak.$(date +%Y%m%d%H%M%S)"
-echo "settings.json backed up"
 
-# Check if newsspinner hook already exists
 if jq -e '.hooks.PostToolUse[]?.hooks[]? | select(.command | contains("newsspinner"))' "$SETTINGS" > /dev/null 2>&1; then
-  echo "NewsSpinner hook already registered, skipping"
+  echo "[7/7] NewsSpinner hook already registered"
 else
   jq '
     .hooks //= {} |
@@ -80,30 +87,26 @@ else
       }
     ]
   ' "$SETTINGS" > "$SETTINGS.tmp" && mv "$SETTINGS.tmp" "$SETTINGS"
-  echo "PostToolUse hook registered"
+  echo "[7/7] PostToolUse hook registered"
 fi
 
-# 8. Add initial keywords if provided as arguments
+# Optional: add initial keywords from arguments
 if [ $# -gt 0 ]; then
+  echo ""
   for keyword in "$@"; do
     bash "$SPINNER_DIR/bin/fetch.sh" add "$keyword"
   done
   echo ""
   echo "Running initial fetch..."
   bash "$SPINNER_DIR/bin/fetch.sh"
-else
-  echo ""
-  echo "No keywords provided. Add feeds with:"
-  echo "  bash ~/.newsspinner/bin/fetch.sh add <keyword>"
-  echo "Or use /news-fetch in Claude Code."
 fi
 
 echo ""
 echo "=== Installation complete! ==="
+echo ""
 echo "Restart Claude Code to activate the hook."
 echo ""
-echo "Usage:"
-echo "  /news-fetch             # Manage feeds from Claude Code"
-echo "  bash ~/.newsspinner/bin/fetch.sh add AI     # Add a feed"
-echo "  bash ~/.newsspinner/bin/fetch.sh             # Fetch headlines"
-echo "  bash ~/.newsspinner/bin/uninstall.sh         # Remove NewsSpinner"
+echo "Quick start:"
+echo "  /news-fetch                               # manage feeds in Claude Code"
+echo "  bash ~/.newsspinner/bin/fetch.sh add AI    # add a feed from shell"
+echo "  bash ~/.newsspinner/bin/fetch.sh           # fetch headlines"

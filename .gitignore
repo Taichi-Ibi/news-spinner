@@ -1,2 +1,17 @@
+# Temporary files
 *.tmp
+*.bak
+*.bak.*
+
+# Lock files
 .lock
+
+# macOS
+.DS_Store
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/

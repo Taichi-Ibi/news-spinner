@@ -9,17 +9,16 @@ LOCK="$SPINNER_DIR/.lock"
 SETTINGS="$HOME/.claude/settings.json"
 
 # Quick bail-outs for speed (this runs on every tool use)
-[ -f "$POOL" ] || exit 0
+[ -f "$POOL" ]     || exit 0
 [ -f "$SETTINGS" ] || exit 0
-[ -f "$CONFIG" ] || exit 0
+[ -f "$CONFIG" ]   || exit 0
 
 MAX_HISTORY=200
 
 update_spinner() {
   local verbs_json="$1"
-  # Read current settings, update only spinnerVerbs, write atomically
-  jq --argjson sv "$verbs_json" '.spinnerVerbs = $sv' "$SETTINGS" > "$SETTINGS.tmp" \
-    && mv "$SETTINGS.tmp" "$SETTINGS"
+  jq --argjson sv "$verbs_json" '.spinnerVerbs = $sv' "$SETTINGS" \
+    > "$SETTINGS.tmp" && mv "$SETTINGS.tmp" "$SETTINGS"
 }
 
 do_rotate() {
@@ -27,50 +26,33 @@ do_rotate() {
   pool_size=$(jq 'length' "$POOL")
 
   if [ "$pool_size" -eq 0 ]; then
-    # Pool empty: set empty_messages as verbs
     local empty_msgs
-    empty_msgs=$(jq -r '.empty_messages // ["No news... refresh me"]' "$CONFIG")
-    local verbs_json
-    verbs_json=$(jq -n --argjson msgs "$empty_msgs" '{"mode": "replace", "verbs": $msgs}')
-    update_spinner "$verbs_json"
-    exit 0
+    empty_msgs=$(jq '.empty_messages // ["No news... run /news-fetch"]' "$CONFIG")
+    update_spinner "$(jq -n --argjson msgs "$empty_msgs" '{"mode":"replace","verbs":$msgs}')"
+    return 0
   fi
 
   # Pick a random index
-  local idx
+  local idx title
   idx=$((RANDOM % pool_size))
-
-  # Extract the title
-  local title
   title=$(jq -r ".[$idx]" "$POOL")
 
-  # Remove from pool
+  # Remove from pool, add to history, trim history — single jq pass each
   jq "del(.[$idx])" "$POOL" > "$POOL.tmp" && mv "$POOL.tmp" "$POOL"
 
-  # Add to history
   [ -f "$HISTORY" ] || echo '[]' > "$HISTORY"
-  jq --arg t "$title" '. + [$t]' "$HISTORY" > "$HISTORY.tmp" && mv "$HISTORY.tmp" "$HISTORY"
+  jq --arg t "$title" --argjson max "$MAX_HISTORY" '
+    . + [$t] | if length > $max then .[(length - $max):] else . end
+  ' "$HISTORY" > "$HISTORY.tmp" && mv "$HISTORY.tmp" "$HISTORY"
 
-  # Trim history to max
-  local hist_size
-  hist_size=$(jq 'length' "$HISTORY")
-  if [ "$hist_size" -gt "$MAX_HISTORY" ]; then
-    local trim=$((hist_size - MAX_HISTORY))
-    jq ".[$trim:]" "$HISTORY" > "$HISTORY.tmp" && mv "$HISTORY.tmp" "$HISTORY"
-  fi
-
-  # Calculate remaining
+  # Update spinner with headline and remaining count
   local remaining
   remaining=$(jq 'length' "$POOL")
-
-  # Update spinner
   local display="${title} [${remaining}]"
-  local verbs_json
-  verbs_json=$(jq -n --arg v "$display" '{"mode": "replace", "verbs": [$v]}')
-  update_spinner "$verbs_json"
+  update_spinner "$(jq -n --arg v "$display" '{"mode":"replace","verbs":[$v]}')"
 }
 
-# Use flock if available
+# Use flock if available for safe concurrent access
 if command -v flock > /dev/null 2>&1; then
   exec 9>"$LOCK"
   flock -w 5 9 || exit 0
