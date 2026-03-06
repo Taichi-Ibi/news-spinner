@@ -6,20 +6,12 @@ CONFIG="$SPINNER_DIR/config.json"
 POOL="$SPINNER_DIR/pool.json"
 HISTORY="$SPINNER_DIR/history.json"
 LOCK="$SPINNER_DIR/.lock"
-SETTINGS="$HOME/.claude/settings.json"
 
 # Quick bail-outs for speed (this runs on every tool use)
-[ -f "$POOL" ]     || exit 0
-[ -f "$SETTINGS" ] || exit 0
-[ -f "$CONFIG" ]   || exit 0
+[ -f "$POOL" ]   || exit 0
+[ -f "$CONFIG" ] || exit 0
 
 MAX_HISTORY=200
-
-update_spinner() {
-  local verbs_json="$1"
-  jq --argjson sv "$verbs_json" '.spinnerVerbs = $sv' "$SETTINGS" \
-    > "$SETTINGS.tmp" && mv "$SETTINGS.tmp" "$SETTINGS"
-}
 
 do_rotate() {
   local pool_size
@@ -27,8 +19,8 @@ do_rotate() {
 
   if [ "$pool_size" -eq 0 ]; then
     local empty_msgs
-    empty_msgs=$(jq '.empty_messages // ["広告枠空いてます！ /ad load で補充"]' "$CONFIG")
-    update_spinner "$(jq -n --argjson msgs "$empty_msgs" '{"mode":"replace","verbs":$msgs}')"
+    empty_msgs=$(jq -c '.empty_messages // ["広告枠空いてます！ /ad load で補充"]' "$CONFIG")
+    jq -n --argjson msgs "$empty_msgs" '{"spinnerVerbs":{"mode":"replace","verbs":$msgs}}'
     return 0
   fi
 
@@ -45,11 +37,11 @@ do_rotate() {
     . + [$t] | if length > $max then .[(length - $max):] else . end
   ' "$HISTORY" > "$HISTORY.tmp" && mv "$HISTORY.tmp" "$HISTORY"
 
-  # Update spinner with ad and remaining count
+  # Output spinner update to stdout (Claude Code reads hook stdout)
   local remaining
   remaining=$(jq 'length' "$POOL")
   local display="${title} [${remaining}]"
-  update_spinner "$(jq -n --arg v "$display" '{"mode":"replace","verbs":[$v]}')"
+  jq -n --arg v "$display" '{"spinnerVerbs":{"mode":"replace","verbs":[$v]}}'
 }
 
 # Use flock if available for safe concurrent access
