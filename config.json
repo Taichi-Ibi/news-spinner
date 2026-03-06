@@ -1,14 +1,16 @@
 {
-  "feeds": [
-    {"name": "NHK 主要ニュース", "url": "https://www.nhk.or.jp/rss/news/cat0.xml"},
-    {"name": "Hacker News", "url": "https://hnrss.org/frontpage"},
-    {"name": "TechCrunch", "url": "https://techcrunch.com/feed/"}
-  ],
+  "feeds": [],
+  "base_url": "https://news.google.com/rss/search",
+  "default_params": {
+    "hl": "ja",
+    "gl": "JP",
+    "ceid": "JP:ja"
+  },
   "max_pool_size": 50,
   "max_title_length": 40,
   "empty_messages": [
-    "📰 ニュース切れ！ fetch して",
-    "No news... refresh me",
+    "📰 ニュース切れ！ /news-fetch して",
+    "No news... run /news-fetch",
     "Waiting for fresh headlines"
   ]
 }

@@ -6,7 +6,14 @@ SETTINGS="$HOME/.claude/settings.json"
 
 echo "=== NewsSpinner Uninstaller ==="
 
-# 1. Update settings.json if it exists
+# 1. Remove skill
+SKILL_DIR="$HOME/.claude/skills/news-fetch"
+if [ -d "$SKILL_DIR" ]; then
+  rm -rf "$SKILL_DIR"
+  echo "Skill /news-fetch removed"
+fi
+
+# 2. Update settings.json if it exists
 if [ -f "$SETTINGS" ]; then
   # Backup
   cp "$SETTINGS" "$SETTINGS.bak.$(date +%Y%m%d%H%M%S)"
@@ -34,7 +41,7 @@ else
   echo "settings.json not found, skipping"
 fi
 
-# 2. Remove NewsSpinner directory
+# 3. Remove NewsSpinner directory
 if [ -d "$SPINNER_DIR" ]; then
   rm -rf "$SPINNER_DIR"
   echo "Removed $SPINNER_DIR"

@@ -40,11 +40,19 @@ else
 fi
 
 # 5. Initialize pool.json and history.json
-echo '[]' > "$SPINNER_DIR/pool.json"
-echo '[]' > "$SPINNER_DIR/history.json"
+[ -f "$SPINNER_DIR/pool.json" ] || echo '[]' > "$SPINNER_DIR/pool.json"
+[ -f "$SPINNER_DIR/history.json" ] || echo '[]' > "$SPINNER_DIR/history.json"
 echo "pool.json and history.json initialized"
 
-# 6. Add PostToolUse hook to settings.json
+# 6. Install Claude Code skill
+SKILL_DIR="$CLAUDE_DIR/skills/news-fetch"
+mkdir -p "$SKILL_DIR"
+if [ -f "$SCRIPT_DIR/skills/news-fetch/SKILL.md" ]; then
+  cp "$SCRIPT_DIR/skills/news-fetch/SKILL.md" "$SKILL_DIR/SKILL.md"
+  echo "Skill /news-fetch installed"
+fi
+
+# 7. Add PostToolUse hook to settings.json
 if [ ! -f "$SETTINGS" ]; then
   echo '{}' > "$SETTINGS"
 fi
@@ -57,7 +65,6 @@ echo "settings.json backed up"
 if jq -e '.hooks.PostToolUse[]?.hooks[]? | select(.command | contains("newsspinner"))' "$SETTINGS" > /dev/null 2>&1; then
   echo "NewsSpinner hook already registered, skipping"
 else
-  # Add the PostToolUse hook, preserving existing hooks
   jq '
     .hooks //= {} |
     .hooks.PostToolUse //= [] |
@@ -76,16 +83,27 @@ else
   echo "PostToolUse hook registered"
 fi
 
-# 7. Run initial fetch
-echo ""
-echo "Running initial fetch..."
-bash "$SPINNER_DIR/bin/fetch.sh"
+# 8. Add initial keywords if provided as arguments
+if [ $# -gt 0 ]; then
+  for keyword in "$@"; do
+    bash "$SPINNER_DIR/bin/fetch.sh" add "$keyword"
+  done
+  echo ""
+  echo "Running initial fetch..."
+  bash "$SPINNER_DIR/bin/fetch.sh"
+else
+  echo ""
+  echo "No keywords provided. Add feeds with:"
+  echo "  bash ~/.newsspinner/bin/fetch.sh add <keyword>"
+  echo "Or use /news-fetch in Claude Code."
+fi
 
 echo ""
 echo "=== Installation complete! ==="
 echo "Restart Claude Code to activate the hook."
 echo ""
-echo "Commands:"
-echo "  bash ~/.newsspinner/bin/fetch.sh      # Fetch new headlines"
-echo "  bash ~/.newsspinner/bin/rotate.sh     # Manually rotate spinner"
-echo "  bash ~/.newsspinner/bin/uninstall.sh  # Remove NewsSpinner"
+echo "Usage:"
+echo "  /news-fetch             # Manage feeds from Claude Code"
+echo "  bash ~/.newsspinner/bin/fetch.sh add AI     # Add a feed"
+echo "  bash ~/.newsspinner/bin/fetch.sh             # Fetch headlines"
+echo "  bash ~/.newsspinner/bin/uninstall.sh         # Remove NewsSpinner"
