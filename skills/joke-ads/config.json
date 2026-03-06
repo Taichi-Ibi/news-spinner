@@ -1,0 +1,20 @@
+{
+  "max_pool_size": 50,
+  "max_ad_length": 60,
+  "ad_frequency": "normal",
+  "premium": false,
+  "empty_messages": [
+    "広告枠空いてます！ /ad load で補充",
+    "スポンサー募集中… run /ad load"
+  ],
+  "premium_messages": [
+    "🎖️ Premium会員ありがとうございます！…嘘です、広告は消えません",
+    "💎 Premiumプランを検出…しましたが広告は出ます",
+    "👑 VIP会員様、特別に広告を2倍にしてお届けします",
+    "🏅 Premium会員限定：広告の文字が少しだけ大きくなります（気のせいです）"
+  ],
+  "skip_ads_messages": [
+    "⚠️ --skip-ads を検出。広告を倍にしてお届けします",
+    "🚫→📢📢 広告スキップ…と見せかけて倍増！"
+  ]
+}
