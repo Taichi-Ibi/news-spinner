@@ -14,7 +14,7 @@ The project is primarily **Bash-based** with JSON configuration files and a skil
 
 - **Shared components**: `rotate.sh` is used by both modes as the `PostToolUse` hook
 - **Mode separation**: News and Joke Ads are installed independently under `.claude/skills/`
-- **Runtime data**: All state is stored in `.claude/` directory (config, pool, history, ads)
+- **Runtime data**: Each skill stores state in its own `runtime/` directory (config, pool, history); news-spinner also uses `state.json` for feature flags
 - **Installation**: Both have their own `install.sh` and `uninstall.sh` scripts
 
 ## Workflow Rules
@@ -43,7 +43,7 @@ The project is primarily **Bash-based** with JSON configuration files and a skil
 - Document any new runtime files that install.sh creates
 
 ### 5. Skill Commands
-- News mode skills: `add`, `remove`, `list`, `fetch` with `news-fetch` namespace
+- News mode skill: `/news-spinner <keyword>…`, `--since DATE`, `clear`, `weave on/off`, `uninstall`
 - Joke Ads skills: `add`, `remove`, `list`, `load`, `premium`, `--skip-ads` with `ad` namespace
 - Skill behavior is defined in `.claude/skills/*/SKILL.md`; update it when command behavior changes
 
@@ -56,7 +56,7 @@ The project is primarily **Bash-based** with JSON configuration files and a skil
 ## Common Patterns
 
 ### Adding a new configuration option
-1. Add the key to the relevant `config.json` template in `.claude/skills/*/config.json`
+1. Add the key to the relevant `config.json` template in `.claude/skills/*/templates/config.json`
 2. Update the corresponding shell script to read and use it
 3. Update README.md with documentation of the new option
 4. Document default behavior when the key is missing
@@ -87,12 +87,15 @@ The project is primarily **Bash-based** with JSON configuration files and a skil
 
 ## File Locations
 
-- Shell scripts: `.claude/skills/{news-fetch,joke-ads}/bin/*.sh`
-- Skill metadata: `.claude/skills/{news-fetch,joke-ads}/SKILL.md`
-- Runtime config: `.claude/config.json` (created by install)
-- Spinner pool: `.claude/pool.json` (created at runtime)
-- History: `.claude/history.json` (optional, tracks shown items)
-- Ads source: `.claude/ads.json` (joke-ads mode only)
+- Shell scripts: `.claude/skills/{news-spinner,joke-ads}/bin/*.sh`
+- Skill metadata: `.claude/skills/{news-spinner,joke-ads}/SKILL.md`
+- Config templates (git-tracked): `.claude/skills/*/templates/config.json`
+- Runtime config (user-local): `.claude/skills/*/runtime/config.json` (copied from templates on install)
+- Feature flags: `.claude/skills/news-spinner/runtime/state.json` (`weave_enabled`)
+- Spinner pool: `.claude/skills/news-spinner/runtime/pool.json`
+- History: `.claude/skills/news-spinner/runtime/history.json`
+- Weave tracking script: `.claude/skills/news-spinner/bin/weave_track.py`
+- Ads source: `.claude/skills/joke-ads/ads.json` (joke-ads mode only)
 
 ## When in Doubt
 

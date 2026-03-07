@@ -1,5 +1,5 @@
 ---
-name: news-fetch
+name: news-spinner
 description: >
   Fetch Google News headlines into the NewsSpinner spinner pool.
   Trigger when user wants to fetch news headlines, search keywords, or manage spinner content.
@@ -39,7 +39,7 @@ Use AskUserQuestion to confirm uninstall. If user confirms:
 bash "${CLAUDE_SKILL_DIR}/bin/uninstall.sh"
 ```
 
-Tell the user this removes the hook/runtime data and deletes `.claude/skills/news-fetch/`.
+Tell the user this removes the hook/runtime data and deletes `.claude/skills/news-spinner/`.
 
 ### `<keyword> [keyword2 ...]` or `[--since YYYY-MM-DD] <keyword> ...`
 
@@ -84,8 +84,7 @@ bash "${CLAUDE_SKILL_DIR}/bin/fetch.sh" clear
 - Command failure: show the error output and suggest likely causes
 - `jq` / `curl` not installed: guide user to run `install.sh`
 - Network error: suggest checking connectivity
-- Corrupted config.json: restore from default:
+- Corrupted runtime/config.json: restore from template:
   ```bash
-  mkdir -p "${CLAUDE_SKILL_DIR}/runtime"
-  cp "${CLAUDE_SKILL_DIR}/config.json" "${CLAUDE_SKILL_DIR}/runtime/config.json"
+  cp "${CLAUDE_SKILL_DIR}/templates/config.json" "${CLAUDE_SKILL_DIR}/runtime/config.json"
   ```

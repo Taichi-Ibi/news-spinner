@@ -48,7 +48,7 @@ Or if you already have a `.claude/` directory in your project:
 curl -fsSL https://raw.githubusercontent.com/Taichi-Ibi/NewsSpinner/main/install.sh | bash
 ```
 
-The installer downloads skills into your project's `.claude/skills/` directory. All settings and runtime data are stored in `.claude/`.
+The installer downloads skills into your project's `.claude/skills/` directory. All settings and runtime data are stored under `.claude/skills/*/runtime/` (gitignored).
 It also appends NewsSpinner-specific ignore rules to your project's `.gitignore` to avoid dirtying your repository with runtime files.
 
 **Restart Claude Code after installation to activate the hook.**
@@ -62,22 +62,23 @@ It also appends NewsSpinner-specific ignore rules to your project's `.gitignore`
 #### Via Claude Code skill (recommended)
 
 ```
-/news-fetch              # interactive feed management
-/news-fetch add AI       # add a feed for "AI"
-/news-fetch remove AI    # remove the feed
-/news-fetch list         # show registered feeds
-/news-fetch fetch        # fetch new headlines
-/news-fetch uninstall    # safely uninstall and remove the skill directory
+/news-spinner                        # interactive: ask for keywords
+/news-spinner AI                     # fetch headlines for "AI"
+/news-spinner Claude ChatGPT Gemini  # fetch multiple keywords at once
+/news-spinner --since 2026-03-01 AI  # fetch headlines since a date
+/news-spinner clear                  # clear the spinner pool
+/news-spinner weave on               # enable W&B Weave tracking
+/news-spinner weave off              # disable W&B Weave tracking
+/news-spinner uninstall              # safely uninstall and remove the skill directory
 ```
 
 #### Via shell
 
 ```bash
-bash .claude/skills/news-fetch/bin/fetch.sh add "AI"
-bash .claude/skills/news-fetch/bin/fetch.sh add "Claude Code"
-bash .claude/skills/news-fetch/bin/fetch.sh list
-bash .claude/skills/news-fetch/bin/fetch.sh remove "AI"
-bash .claude/skills/news-fetch/bin/fetch.sh          # fetch all feeds
+bash .claude/skills/news-spinner/bin/fetch.sh "AI"
+bash .claude/skills/news-spinner/bin/fetch.sh "Claude Code" "ChatGPT"
+bash .claude/skills/news-spinner/bin/fetch.sh --since 2026-03-01 "高市"
+bash .claude/skills/news-spinner/bin/fetch.sh clear
 ```
 
 ### Joke Ads mode
@@ -116,7 +117,7 @@ bash .claude/skills/joke-ads/bin/ads.sh premium      # go premium (try it!)
 
 ### News mode
 
-1. **fetch.sh** — Fetches headlines from Google News RSS and stores them in `pool.json`.
+1. **fetch.sh** — Fetches headlines from Google News RSS and stores them in `runtime/pool.json`.
 2. **rotate.sh** — Registered as a `PostToolUse` hook. On every tool call it picks a random headline from the pool and sets it as the spinner text.
 3. When the pool is empty, a configurable placeholder message is displayed.
 
@@ -124,7 +125,7 @@ bash .claude/skills/joke-ads/bin/ads.sh premium      # go premium (try it!)
 Google News RSS
      │
      ▼
-  fetch.sh ──▶ .claude/pool.json ──▶ rotate.sh ──▶ spinnerVerbs
+  fetch.sh ──▶ runtime/pool.json ──▶ rotate.sh ──▶ spinnerVerbs
                                           ▲
                                 PostToolUse hook
 ```
@@ -146,19 +147,9 @@ Google News RSS
 
 ## Configuration
 
-All runtime data is stored in the project's `.claude/` directory:
-
-| File | Description |
-|------|-------------|
-| `.claude/settings.json` | Claude Code settings (hook registered here) |
-| `.claude/config.json` | NewsSpinner configuration |
-| `.claude/pool.json` | Current spinner headline/ad pool |
-| `.claude/history.json` | Previously shown headlines/ads |
-| `.claude/ads.json` | Joke Ads source file (ads mode only) |
-
 ### News mode
 
-Edit `.claude/config.json`:
+Runtime config is stored in `.claude/skills/news-spinner/runtime/config.json` (created from the template on install). Edit it to customize behavior:
 
 | Key | Default | Description |
 |-----|---------|-------------|
@@ -168,7 +159,7 @@ Edit `.claude/config.json`:
 | `default_params.ceid` | `JP:ja` | Edition ID |
 | `max_pool_size` | `50` | Maximum headlines in pool |
 | `max_title_length` | `40` | Truncate titles longer than this |
-| `empty_messages` | `["No news... run /news-fetch"]` | Shown when pool is empty |
+| `empty_messages` | `["No news... run /news-spinner <keyword>"]` | Shown when pool is empty |
 
 To switch to English (US) news, update the locale parameters:
 
@@ -196,6 +187,28 @@ To switch to English (US) news, update the locale parameters:
 
 Custom ads can be added to `.claude/ads.json` directly or via `ads.sh add`.
 
+## W&B Weave Tracking
+
+News mode optionally logs fetch operations to [Weights & Biases Weave](https://wandb.ai/site/weave) for observability.
+
+### Setup
+
+```bash
+pip install weave wandb
+export WANDB_API_KEY=your_api_key
+```
+
+### Enable/disable
+
+```
+/news-spinner weave on
+/news-spinner weave off
+```
+
+Weave is **off by default**. When enabled, each fetch is logged as a Weave op with:
+- **Input**: keywords, date filter, locale, pool size before fetch
+- **Output**: keyword count, headlines added, pool size after, new headline details (title, link, pubDate, source)
+
 ## Project Structure
 
 ```
@@ -204,30 +217,32 @@ NewsSpinner/
 ├── README.md
 └── .claude/
     ├── settings.json              # Claude Code project settings
-    ├── skills/
-    │   ├── news-fetch/            # News mode
-    │   │   ├── SKILL.md
-    │   │   ├── config.json        # default config template
-    │   │   └── bin/
-    │   │       ├── install.sh
-    │   │       ├── uninstall.sh
-    │   │       ├── fetch.sh
-    │   │       └── rotate.sh
-    │   └── joke-ads/              # Joke Ads mode
-    │       ├── SKILL.md
-    │       ├── config.json        # default config template
-    │       ├── ads.json           # hardcoded fake sponsor ads
-    │       └── bin/
-    │           ├── install.sh
-    │           ├── uninstall.sh
-    │           ├── ads.sh
-    │           └── rotate.sh
-    │
-    │   (created by install.sh)
-    ├── config.json                # runtime config
-    ├── pool.json                  # spinner pool
-    ├── history.json               # shown headlines/ads
-    └── ads.json                   # ads source (joke-ads mode)
+    └── skills/
+        ├── news-spinner/          # News mode
+        │   ├── SKILL.md
+        │   ├── templates/
+        │   │   ├── config.json    # default config (git-tracked)
+        │   │   └── state.json     # default state (git-tracked)
+        │   ├── bin/
+        │   │   ├── install.sh
+        │   │   ├── uninstall.sh
+        │   │   ├── fetch.sh
+        │   │   ├── rotate.sh
+        │   │   └── weave_track.py
+        │   └── runtime/           # user-local, gitignored
+        │       ├── config.json
+        │       ├── state.json
+        │       ├── pool.json
+        │       └── history.json
+        └── joke-ads/              # Joke Ads mode
+            ├── SKILL.md
+            ├── config.json        # default config template
+            ├── ads.json           # hardcoded fake sponsor ads
+            └── bin/
+                ├── install.sh
+                ├── uninstall.sh
+                ├── ads.sh
+                └── rotate.sh
 ```
 
 ## Uninstall
@@ -236,7 +251,7 @@ NewsSpinner/
 curl -fsSL https://raw.githubusercontent.com/Taichi-Ibi/NewsSpinner/main/uninstall.sh | bash
 ```
 
-This safely removes the NewsSpinner hook and runtime files, then deletes `.claude/skills/news-fetch/`.
+This safely removes the NewsSpinner hook and runtime files, then deletes `.claude/skills/news-spinner/`.
 
 ---
 
@@ -246,7 +261,7 @@ Claude Code の spinnerVerbs（推論中に表示される「Working…」等の
 
 **NEW: ジョーク広告モード** — スピナーに架空のスポンサー広告を表示してウケを狙えます。`--skip-ads`（広告が倍増）、Premiumモード（何も起きない）、`ad_frequency`設定（完全に無視される）などのジョーク機能付き。
 
-設定・データはすべてプロジェクトの `.claude/` ディレクトリに保存されます。
+設定・データはすべてプロジェクトの `.claude/skills/*/runtime/` ディレクトリに保存されます（gitignore済み）。
 
 ### 必要なもの
 
@@ -269,8 +284,7 @@ curl -fsSL https://raw.githubusercontent.com/Taichi-Ibi/NewsSpinner/main/install
 curl -fsSL https://raw.githubusercontent.com/Taichi-Ibi/NewsSpinner/main/install.sh | bash
 ```
 
-インストーラーはスキルをプロジェクトの `.claude/skills/` にダウンロードします。設定・データはすべて `.claude/` ディレクトリに保存されます。
-また、ランタイム生成ファイルでリポジトリが汚れないように、NewsSpinner 用の `.gitignore` ルールを自動追記します。
+インストーラーはスキルをプロジェクトの `.claude/skills/` にダウンロードします。設定・データはすべて `.claude/skills/*/runtime/` に保存されます（gitignore済み）。
 
 **インストール後、Claude Code を再起動してください（hook を有効化するため）。**
 
@@ -279,22 +293,23 @@ curl -fsSL https://raw.githubusercontent.com/Taichi-Ibi/NewsSpinner/main/install
 #### ニュースモード — Claude Code スキル（推奨）
 
 ```
-/news-fetch              → 対話的にフィード管理
-/news-fetch add AI       → 「AI」のフィードを追加
-/news-fetch remove AI    → フィードを削除
-/news-fetch list         → 登録済み一覧
-/news-fetch fetch        → ニュース取得
-/news-fetch uninstall    → 安全にアンインストールしてスキルディレクトリも削除
+/news-spinner                        → 対話的にキーワードを入力
+/news-spinner AI                     → 「AI」のニュースを取得
+/news-spinner Claude ChatGPT Gemini  → 複数キーワードを一度に取得
+/news-spinner --since 2026-03-01 AI  → 指定日以降のニュースを取得
+/news-spinner clear                  → プールをクリア
+/news-spinner weave on               → W&B Weave トラッキングを有効化
+/news-spinner weave off              → W&B Weave トラッキングを無効化
+/news-spinner uninstall              → 安全にアンインストールしてスキルディレクトリも削除
 ```
 
 #### ニュースモード — シェルから直接
 
 ```bash
-bash .claude/skills/news-fetch/bin/fetch.sh add "AI"
-bash .claude/skills/news-fetch/bin/fetch.sh add "Claude Code"
-bash .claude/skills/news-fetch/bin/fetch.sh list
-bash .claude/skills/news-fetch/bin/fetch.sh remove "AI"
-bash .claude/skills/news-fetch/bin/fetch.sh                  # 全フィードからニュース取得
+bash .claude/skills/news-spinner/bin/fetch.sh "AI"
+bash .claude/skills/news-spinner/bin/fetch.sh "Claude Code" "ChatGPT"
+bash .claude/skills/news-spinner/bin/fetch.sh --since 2026-03-01 "高市"
+bash .claude/skills/news-spinner/bin/fetch.sh clear
 ```
 
 #### ジョーク広告モード — Claude Code スキル（推奨）
