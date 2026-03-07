@@ -23,19 +23,19 @@ if [ "${#missing[@]}" -gt 0 ]; then
   echo "Please install them and try again." >&2
   exit 1
 fi
-echo "[1/4] Dependencies OK (jq, curl)"
+echo "[1/5] Dependencies OK (jq, curl)"
 
 # 2. Set execute permissions on scripts
 chmod +x "$SCRIPT_DIR"/*.sh
-echo "[2/4] Script permissions set"
+echo "[2/5] Script permissions set"
 
 # 3. Initialize runtime directory from templates (preserve existing user files)
 mkdir -p "$RUNTIME_DIR"
 if [ ! -f "$RUNTIME_DIR/config.json" ]; then
   cp "$TEMPLATES_DIR/config.json" "$RUNTIME_DIR/config.json"
-  echo "[3/4] runtime/config.json created from template"
+  echo "[3/5] runtime/config.json created from template"
 else
-  echo "[3/4] runtime/config.json already exists, keeping current"
+  echo "[3/5] runtime/config.json already exists, keeping current"
 fi
 if [ ! -f "$RUNTIME_DIR/state.json" ]; then
   cp "$TEMPLATES_DIR/state.json" "$RUNTIME_DIR/state.json"
@@ -46,9 +46,9 @@ fi
 [ -f "$SPINNER_DIR/history.json" ] && [ ! -f "$RUNTIME_DIR/history.json" ] && mv "$SPINNER_DIR/history.json" "$RUNTIME_DIR/history.json"
 if [ ! -f "$RUNTIME_DIR/pool.json" ]; then
   cp "$TEMPLATES_DIR/ads.json" "$RUNTIME_DIR/pool.json"
-  echo "[4/4] Spinner pool seeded with initial ads"
+  echo "[4/5] Spinner pool seeded with initial ads"
 else
-  echo "[4/4] pool.json already exists, keeping current"
+  echo "[4/5] pool.json already exists, keeping current"
 fi
 [ -f "$RUNTIME_DIR/history.json" ] || echo '[]' > "$RUNTIME_DIR/history.json"
 
@@ -64,7 +64,7 @@ if [ "$settings_created" = false ]; then
 fi
 
 if jq -e '.hooks.UserPromptSubmit[]?.hooks[]? | select(.command | contains("rotate.sh"))' "$SETTINGS" > /dev/null 2>&1; then
-  echo "[5/5] news-spinner hook already registered"
+  echo "[5/5] Hook already registered"
 else
   jq --arg cmd "$ROTATE_SH 2>/dev/null || true" '
     .hooks //= {} |
@@ -81,17 +81,6 @@ else
     ]
   ' "$SETTINGS" > "$SETTINGS.tmp" && mv "$SETTINGS.tmp" "$SETTINGS"
   echo "[5/5] UserPromptSubmit hook registered"
-fi
-
-# Optional: add initial keywords from arguments
-if [ $# -gt 0 ]; then
-  echo ""
-  for keyword in "$@"; do
-    bash "$SCRIPT_DIR/fetch.sh" add "$keyword"
-  done
-  echo ""
-  echo "Running initial fetch..."
-  bash "$SCRIPT_DIR/fetch.sh"
 fi
 
 echo ""
