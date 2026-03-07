@@ -14,15 +14,15 @@ if [ -f "$SETTINGS" ]; then
   cp "$SETTINGS" "$SETTINGS.bak.$(date +%Y%m%d%H%M%S)"
 
   jq '
-    # Remove hook entries containing "rotate.sh"
-    if .hooks.PostToolUse then
-      .hooks.PostToolUse = [
-        .hooks.PostToolUse[] |
+    # Remove hook entries containing "rotate.sh" from UserPromptSubmit
+    if .hooks.UserPromptSubmit then
+      .hooks.UserPromptSubmit = [
+        .hooks.UserPromptSubmit[] |
         select((.hooks // []) | all(.command // "" | contains("rotate.sh") | not))
       ]
     else . end |
     # Clean up empty arrays/objects
-    if (.hooks.PostToolUse // []) | length == 0 then del(.hooks.PostToolUse) else . end |
+    if (.hooks.UserPromptSubmit // []) | length == 0 then del(.hooks.UserPromptSubmit) else . end |
     if (.hooks // {}) | length == 0 then del(.hooks) else . end |
     # Remove spinnerVerbs override
     del(.spinnerVerbs)

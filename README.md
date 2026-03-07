@@ -232,11 +232,10 @@ NewsSpinner/
 ## Uninstall
 
 ```bash
-bash .claude/skills/news-fetch/bin/uninstall.sh   # news mode
-bash .claude/skills/joke-ads/bin/uninstall.sh     # joke-ads mode
+curl -fsSL https://raw.githubusercontent.com/Taichi-Ibi/NewsSpinner/main/uninstall.sh | bash
 ```
 
-This removes the Claude Code hook, spinner overrides, and runtime data files from `.claude/`.
+This safely removes the NewsSpinner hook and runtime files, then deletes `.claude/skills/news-fetch/`.
 
 ---
 
@@ -328,8 +327,7 @@ bash .claude/skills/joke-ads/bin/ads.sh premium              # Premium化（試�
 ### アンインストール
 
 ```bash
-bash .claude/skills/news-fetch/bin/uninstall.sh   # ニュースモード
-bash .claude/skills/joke-ads/bin/uninstall.sh     # ジョーク広告モード
+curl -fsSL https://raw.githubusercontent.com/Taichi-Ibi/NewsSpinner/main/uninstall.sh | bash
 ```
 
 ## License
