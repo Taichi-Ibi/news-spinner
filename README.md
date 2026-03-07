@@ -1,4 +1,4 @@
-# NewsSpinner
+# news-spinner
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Shell: Bash](https://img.shields.io/badge/Shell-Bash-green.svg)](https://www.gnu.org/software/bash/)
@@ -7,7 +7,7 @@
 
 **[日本語](#日本語) | English**
 
-NewsSpinner replaces the "Working…" spinner verbs shown during Claude Code inference with real headlines from Google News. Every tool call rotates a fresh headline into the spinner, turning wait time into a mini news ticker.
+news-spinner replaces the "Working…" spinner verbs shown during Claude Code inference with real headlines from Google News. Every tool call rotates a fresh headline into the spinner, turning wait time into a mini news ticker.
 
 ## Demo
 
@@ -35,19 +35,19 @@ After fetching real news with `/news-spinner <keyword>`:
 ### Quick Install (one-liner)
 
 ```bash
-git clone https://github.com/Taichi-Ibi/NewsSpinner.git
-cd NewsSpinner
-curl -fsSL https://raw.githubusercontent.com/Taichi-Ibi/NewsSpinner/main/install.sh | bash
+git clone https://github.com/Taichi-Ibi/news-spinner.git
+cd news-spinner
+curl -fsSL https://raw.githubusercontent.com/Taichi-Ibi/news-spinner/main/install.sh | bash
 ```
 
 Or if you already have a `.claude/` directory in your project:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Taichi-Ibi/NewsSpinner/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Taichi-Ibi/news-spinner/main/install.sh | bash
 ```
 
 The installer downloads the skill into your project's `.claude/skills/` directory. All settings and runtime data are stored under `.claude/skills/news-spinner/runtime/` (gitignored).
-It also appends NewsSpinner-specific ignore rules to your project's `.gitignore` to avoid dirtying your repository with runtime files.
+It also appends news-spinner-specific ignore rules to your project's `.gitignore` to avoid dirtying your repository with runtime files.
 
 **Restart Claude Code after installation to activate the hook.**
 
@@ -118,14 +118,23 @@ To switch to English (US) news, update the locale parameters:
 
 ## W&B Weave Tracking
 
-NewsSpinner optionally logs fetch operations to [Weights & Biases Weave](https://wandb.ai/site/weave) for observability.
+news-spinner optionally logs fetch operations to [Weights & Biases Weave](https://wandb.ai/site/weave) for observability.
 
 ### Setup
 
 ```bash
+# Create a virtual environment in the project root
+python3 -m venv .venv
+source .venv/bin/activate
+
+# Install dependencies
 pip install weave wandb
+
+# Set your W&B API key (add to ~/.zshrc or ~/.bashrc to persist)
 export WANDB_API_KEY=your_api_key
 ```
+
+> The `.venv/` directory is gitignored.
 
 ### Enable/disable
 
@@ -141,7 +150,7 @@ Weave is **off by default**. When enabled, each fetch is logged as a Weave op wi
 ## Project Structure
 
 ```
-NewsSpinner/
+news-spinner/
 ├── LICENSE
 ├── README.md
 └── .claude/
@@ -175,10 +184,10 @@ NewsSpinner/
 Or via the one-liner:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Taichi-Ibi/NewsSpinner/main/uninstall.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Taichi-Ibi/news-spinner/main/uninstall.sh | bash
 ```
 
-This safely removes the NewsSpinner hook and runtime files, then deletes `.claude/skills/news-spinner/`.
+This safely removes the news-spinner hook and runtime files, then deletes `.claude/skills/news-spinner/`.
 
 ---
 
@@ -200,15 +209,15 @@ Claude Code の spinnerVerbs（推論中に表示される「Working…」等の
 #### ワンライナー（推奨）
 
 ```bash
-git clone https://github.com/Taichi-Ibi/NewsSpinner.git
-cd NewsSpinner
-curl -fsSL https://raw.githubusercontent.com/Taichi-Ibi/NewsSpinner/main/install.sh | bash
+git clone https://github.com/Taichi-Ibi/news-spinner.git
+cd news-spinner
+curl -fsSL https://raw.githubusercontent.com/Taichi-Ibi/news-spinner/main/install.sh | bash
 ```
 
 または既に `.claude/` ディレクトリがあるプロジェクトなら：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Taichi-Ibi/NewsSpinner/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Taichi-Ibi/news-spinner/main/install.sh | bash
 ```
 
 **インストール後、Claude Code を再起動してください（hook を有効化するため）。**
@@ -235,6 +244,24 @@ bash .claude/skills/news-spinner/bin/fetch.sh "AI"
 bash .claude/skills/news-spinner/bin/fetch.sh "Claude Code" "ChatGPT"
 bash .claude/skills/news-spinner/bin/fetch.sh --since 2026-03-01 "高市"
 bash .claude/skills/news-spinner/bin/fetch.sh clear
+```
+
+### W&B Weave トラッキング（オプション）
+
+```bash
+# プロジェクトルートに仮想環境を作成
+python3 -m venv .venv
+source .venv/bin/activate
+
+pip install weave wandb
+export WANDB_API_KEY=your_api_key
+```
+
+有効化・無効化：
+
+```
+/news-spinner weave on
+/news-spinner weave off
 ```
 
 ### アンインストール

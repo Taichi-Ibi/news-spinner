@@ -1,10 +1,10 @@
-# CLAUDE.md — NewsSpinner Project Guidelines
+# CLAUDE.md — news-spinner Project Guidelines
 
-This file provides project-specific guidance for developing NewsSpinner. Claude Code will read this automatically at session start.
+This file provides project-specific guidance for developing news-spinner. Claude Code will read this automatically at session start.
 
 ## Project Overview
 
-NewsSpinner is a Claude Code integration that replaces spinner verbs with live news headlines fetched from Google News RSS.
+news-spinner is a Claude Code integration that replaces spinner verbs with live news headlines fetched from Google News RSS.
 
 The project is primarily **Bash-based** with JSON configuration files and a skill system for CLI commands.
 

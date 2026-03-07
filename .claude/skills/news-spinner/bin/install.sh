@@ -9,7 +9,7 @@ TEMPLATES_DIR="$SKILL_DIR/templates"
 ROTATE_SH="$SCRIPT_DIR/rotate.sh"
 SETTINGS="$SPINNER_DIR/settings.json"
 
-echo "=== NewsSpinner Installer ==="
+echo "=== news-spinner Installer ==="
 
 # 1. Check dependencies
 missing=()
@@ -64,7 +64,7 @@ if [ "$settings_created" = false ]; then
 fi
 
 if jq -e '.hooks.UserPromptSubmit[]?.hooks[]? | select(.command | contains("rotate.sh"))' "$SETTINGS" > /dev/null 2>&1; then
-  echo "[5/5] NewsSpinner hook already registered"
+  echo "[5/5] news-spinner hook already registered"
 else
   jq --arg cmd "$ROTATE_SH 2>/dev/null || true" '
     .hooks //= {} |
