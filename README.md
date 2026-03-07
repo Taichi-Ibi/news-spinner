@@ -1,5 +1,7 @@
 # news-spinner
 
+![news-spinner](images/Gemini_Generated_Image_ogaajqogaajqogaa.png)
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Shell: Bash](https://img.shields.io/badge/Shell-Bash-green.svg)](https://www.gnu.org/software/bash/)
 
