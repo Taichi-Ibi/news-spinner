@@ -33,13 +33,15 @@ Use AskUserQuestion to ask the user which keyword(s) to fetch.
 
 ### `uninstall`
 
-Use AskUserQuestion to confirm uninstall. If user confirms:
+Check which of the following paths actually exist on disk (using Bash), then present the list to the user as files/directories to delete manually:
 
-```bash
-bash "${CLAUDE_SKILL_DIR}/bin/uninstall.sh"
-```
+- `${CLAUDE_SKILL_DIR}/runtime/` (runtime data directory)
+- `${CLAUDE_SKILL_DIR}/` (entire skill directory)
+- The `hooks.PostToolUse` entry referencing `rotate.sh` in `.claude/settings.json`
+- The `spinnerVerbs` key in `.claude/settings.json`
+- Any `.claude/settings.json.bak.*` backup files
 
-Tell the user this removes the hook/runtime data and deletes `.claude/skills/news-spinner/`.
+Show only the items that exist. Do NOT delete anything. Tell the user to remove these manually or ask Claude Code to delete them.
 
 ### `<keyword> [keyword2 ...]` or `[--since YYYY-MM-DD] <keyword> ...`
 
