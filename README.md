@@ -3,28 +3,18 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Shell: Bash](https://img.shields.io/badge/Shell-Bash-green.svg)](https://www.gnu.org/software/bash/)
 
-> Replace Claude Code's spinner text with live Google News headlines — or fake sponsor ads.
+> Replace Claude Code's spinner text with live Google News headlines.
 
 **[日本語](#日本語) | English**
 
 NewsSpinner replaces the "Working…" spinner verbs shown during Claude Code inference with real headlines from Google News. Every tool call rotates a fresh headline into the spinner, turning wait time into a mini news ticker.
 
-**NEW: Joke Ads mode** — Replace the spinner with fake sponsor ads for a laugh. Features include a `--skip-ads` flag (that doubles the ads), a premium mode (that does nothing), and an `ad_frequency` setting (that is completely ignored).
-
 ## Demo
 
-### News mode
 ```
 ⠋ Tesla unveils new AI chip at CES [12]
 ⠙ OpenAI announces GPT-5 release date [11]
 ⠹ Japan's cherry blossom season starts early [10]
-```
-
-### Joke Ads mode
-```
-⠋ ☕ この推論はスターバックスの提供でお送りしています [12]
-⠙ 📎 Clippy Premium™ — お困りのようですね？月額$9.99 [11]
-⠹ 💊 頭痛にバファリン — Claude の幻覚にも効きます※個人の感想です [10]
 ```
 
 ## Requirements
@@ -48,18 +38,14 @@ Or if you already have a `.claude/` directory in your project:
 curl -fsSL https://raw.githubusercontent.com/Taichi-Ibi/NewsSpinner/main/install.sh | bash
 ```
 
-The installer downloads skills into your project's `.claude/skills/` directory. All settings and runtime data are stored under `.claude/skills/*/runtime/` (gitignored).
+The installer downloads the skill into your project's `.claude/skills/` directory. All settings and runtime data are stored under `.claude/skills/news-spinner/runtime/` (gitignored).
 It also appends NewsSpinner-specific ignore rules to your project's `.gitignore` to avoid dirtying your repository with runtime files.
 
 **Restart Claude Code after installation to activate the hook.**
 
-> **Note:** Both modes share the project's `.claude/` directory and the same `PostToolUse` hook. Install one at a time, or uninstall the other first.
-
 ## Usage
 
-### News mode
-
-#### Via Claude Code skill (recommended)
+### Via Claude Code skill (recommended)
 
 ```
 /news-spinner                        # interactive: ask for keywords
@@ -72,7 +58,7 @@ It also appends NewsSpinner-specific ignore rules to your project's `.gitignore`
 /news-spinner uninstall              # safely uninstall and remove the skill directory
 ```
 
-#### Via shell
+### Via shell
 
 ```bash
 bash .claude/skills/news-spinner/bin/fetch.sh "AI"
@@ -81,41 +67,7 @@ bash .claude/skills/news-spinner/bin/fetch.sh --since 2026-03-01 "高市"
 bash .claude/skills/news-spinner/bin/fetch.sh clear
 ```
 
-### Joke Ads mode
-
-#### Via Claude Code skill (recommended)
-
-```
-/ad                      # interactive ad management
-/ad add "🍣 your ad"     # add a custom ad
-/ad remove "🍣 your ad"  # remove an ad
-/ad list                 # show all ads
-/ad load                 # reload ads into spinner pool
-/ad premium              # activate "premium" (it's a trap)
-/ad --skip-ads           # skip ads (it's also a trap)
-```
-
-#### Via shell
-
-```bash
-bash .claude/skills/joke-ads/bin/ads.sh list
-bash .claude/skills/joke-ads/bin/ads.sh add "🍣 スシロー — 回転寿司のように回転するコード"
-bash .claude/skills/joke-ads/bin/ads.sh load
-bash .claude/skills/joke-ads/bin/ads.sh --skip-ads   # "skip" ads (try it!)
-bash .claude/skills/joke-ads/bin/ads.sh premium      # go premium (try it!)
-```
-
-### Joke Ads — hidden features
-
-| Feature | What you'd expect | What actually happens |
-|---------|-------------------|----------------------|
-| `--skip-ads` | Ads disappear | Ads are **doubled** |
-| `premium` | Ad-free experience | Snarky message, ads remain |
-| `ad_frequency` | Control ad rate | Setting is completely ignored |
-
 ## How It Works
-
-### News mode
 
 1. **fetch.sh** — Fetches headlines from Google News RSS and stores them in `runtime/pool.json`.
 2. **rotate.sh** — Registered as a `PostToolUse` hook. On every tool call it picks a random headline from the pool and sets it as the spinner text.
@@ -130,24 +82,7 @@ Google News RSS
                                 PostToolUse hook
 ```
 
-### Joke Ads mode
-
-1. **ads.json** — Local pool of hardcoded fake sponsor ads (user can add custom ones).
-2. **ads.sh** — Loads ads from `ads.json` into `pool.json`. Handles add/remove/premium/--skip-ads.
-3. **rotate.sh** — Same mechanism: picks a random ad from the pool on every tool call.
-
-```
-.claude/ads.json (local)
-     │
-     ▼
-  ads.sh ──▶ .claude/pool.json ──▶ rotate.sh ──▶ spinnerVerbs
-                                        ▲
-                              PostToolUse hook
-```
-
 ## Configuration
-
-### News mode
 
 Runtime config is stored in `.claude/skills/news-spinner/runtime/config.json` (created from the template on install). Edit it to customize behavior:
 
@@ -173,23 +108,9 @@ To switch to English (US) news, update the locale parameters:
 }
 ```
 
-### Joke Ads mode
-
-| Key | Default | Description |
-|-----|---------|-------------|
-| `max_pool_size` | `50` | Maximum ads in pool |
-| `max_ad_length` | `60` | Truncate ads longer than this |
-| `ad_frequency` | `"normal"` | Ad display frequency (completely ignored) |
-| `premium` | `false` | Premium mode toggle (does nothing useful) |
-| `empty_messages` | `[...]` | Shown when pool is empty |
-| `premium_messages` | `[...]` | Snarky messages for premium users |
-| `skip_ads_messages` | `[...]` | Messages when --skip-ads is used |
-
-Custom ads can be added to `.claude/ads.json` directly or via `ads.sh add`.
-
 ## W&B Weave Tracking
 
-News mode optionally logs fetch operations to [Weights & Biases Weave](https://wandb.ai/site/weave) for observability.
+NewsSpinner optionally logs fetch operations to [Weights & Biases Weave](https://wandb.ai/site/weave) for observability.
 
 ### Setup
 
@@ -218,34 +139,31 @@ NewsSpinner/
 └── .claude/
     ├── settings.json              # Claude Code project settings
     └── skills/
-        ├── news-spinner/          # News mode
-        │   ├── SKILL.md
-        │   ├── templates/
-        │   │   ├── config.json    # default config (git-tracked)
-        │   │   └── state.json     # default state (git-tracked)
-        │   ├── bin/
-        │   │   ├── install.sh
-        │   │   ├── uninstall.sh
-        │   │   ├── fetch.sh
-        │   │   ├── rotate.sh
-        │   │   └── weave_track.py
-        │   └── runtime/           # user-local, gitignored
-        │       ├── config.json
-        │       ├── state.json
-        │       ├── pool.json
-        │       └── history.json
-        └── joke-ads/              # Joke Ads mode
+        └── news-spinner/
             ├── SKILL.md
-            ├── config.json        # default config template
-            ├── ads.json           # hardcoded fake sponsor ads
-            └── bin/
-                ├── install.sh
-                ├── uninstall.sh
-                ├── ads.sh
-                └── rotate.sh
+            ├── templates/
+            │   ├── config.json    # default config (git-tracked)
+            │   └── state.json     # default state (git-tracked)
+            ├── bin/
+            │   ├── install.sh
+            │   ├── uninstall.sh
+            │   ├── fetch.sh
+            │   ├── rotate.sh
+            │   └── weave_track.py
+            └── runtime/           # user-local, gitignored
+                ├── config.json
+                ├── state.json
+                ├── pool.json
+                └── history.json
 ```
 
 ## Uninstall
+
+```bash
+/news-spinner uninstall
+```
+
+Or via the one-liner:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Taichi-Ibi/NewsSpinner/main/uninstall.sh | bash
@@ -259,9 +177,7 @@ This safely removes the NewsSpinner hook and runtime files, then deletes `.claud
 
 Claude Code の spinnerVerbs（推論中に表示される「Working…」等のテキスト）を Google News のヘッドラインに置き換えるツールです。
 
-**NEW: ジョーク広告モード** — スピナーに架空のスポンサー広告を表示してウケを狙えます。`--skip-ads`（広告が倍増）、Premiumモード（何も起きない）、`ad_frequency`設定（完全に無視される）などのジョーク機能付き。
-
-設定・データはすべてプロジェクトの `.claude/skills/*/runtime/` ディレクトリに保存されます（gitignore済み）。
+設定・データはすべてプロジェクトの `.claude/skills/news-spinner/runtime/` ディレクトリに保存されます（gitignore済み）。
 
 ### 必要なもの
 
@@ -284,13 +200,11 @@ curl -fsSL https://raw.githubusercontent.com/Taichi-Ibi/NewsSpinner/main/install
 curl -fsSL https://raw.githubusercontent.com/Taichi-Ibi/NewsSpinner/main/install.sh | bash
 ```
 
-インストーラーはスキルをプロジェクトの `.claude/skills/` にダウンロードします。設定・データはすべて `.claude/skills/*/runtime/` に保存されます（gitignore済み）。
-
 **インストール後、Claude Code を再起動してください（hook を有効化するため）。**
 
 ### 使い方
 
-#### ニュースモード — Claude Code スキル（推奨）
+#### Claude Code スキル（推奨）
 
 ```
 /news-spinner                        → 対話的にキーワードを入力
@@ -303,7 +217,7 @@ curl -fsSL https://raw.githubusercontent.com/Taichi-Ibi/NewsSpinner/main/install
 /news-spinner uninstall              → 安全にアンインストールしてスキルディレクトリも削除
 ```
 
-#### ニュースモード — シェルから直接
+#### シェルから直接
 
 ```bash
 bash .claude/skills/news-spinner/bin/fetch.sh "AI"
@@ -312,39 +226,10 @@ bash .claude/skills/news-spinner/bin/fetch.sh --since 2026-03-01 "高市"
 bash .claude/skills/news-spinner/bin/fetch.sh clear
 ```
 
-#### ジョーク広告モード — Claude Code スキル（推奨）
-
-```
-/ad                      → 対話的に広告管理
-/ad add "🍣 広告テキスト" → カスタム広告を追加
-/ad list                 → 全広告の一覧
-/ad load                 → 広告をプールに読み込み
-/ad premium              → Premium体験を有効化（罠です）
-/ad --skip-ads           → 広告をスキップ（これも罠です）
-```
-
-#### ジョーク広告モード — シェルから直接
-
-```bash
-bash .claude/skills/joke-ads/bin/ads.sh list
-bash .claude/skills/joke-ads/bin/ads.sh add "🍣 スシロー — 回転寿司のように回転するコード"
-bash .claude/skills/joke-ads/bin/ads.sh load
-bash .claude/skills/joke-ads/bin/ads.sh --skip-ads           # 広告を「スキップ」（試してみて！）
-bash .claude/skills/joke-ads/bin/ads.sh premium              # Premium化（試してみて！）
-```
-
-#### ジョーク広告の隠し機能
-
-| 機能 | 期待される動作 | 実際の動作 |
-|------|---------------|-----------|
-| `--skip-ads` | 広告が消える | 広告が**倍増**する |
-| `premium` | 広告なし体験 | 皮肉なメッセージが出て広告はそのまま |
-| `ad_frequency` | 広告頻度の制御 | 設定値は完全に無視される |
-
 ### アンインストール
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/Taichi-Ibi/NewsSpinner/main/uninstall.sh | bash
+```
+/news-spinner uninstall
 ```
 
 ## License
