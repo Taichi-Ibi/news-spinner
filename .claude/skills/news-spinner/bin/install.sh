@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -eo pipefail  # 'u' (nounset) added after BASH_SOURCE check for bash 3.2 compat
 
 GH_RAW="https://raw.githubusercontent.com/Taichi-Ibi/news-spinner/main/.claude/skills/news-spinner"
 
@@ -7,6 +7,7 @@ GH_RAW="https://raw.githubusercontent.com/Taichi-Ibi/news-spinner/main/.claude/s
 # When piped via `curl | bash`, BASH_SOURCE[0] is unset or "/dev/stdin".
 # Download all required files to the project directory, then re-exec from disk.
 _SCRIPT="${BASH_SOURCE[0]:-}"
+set -u
 if [[ -z "$_SCRIPT" || "$_SCRIPT" == "/dev/stdin" || ! -f "$_SCRIPT" ]]; then
   echo "=== news-spinner Installer ==="
   TARGET="$PWD/.claude/skills/news-spinner"
