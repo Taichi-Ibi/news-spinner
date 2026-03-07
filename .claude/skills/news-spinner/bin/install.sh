@@ -106,6 +106,9 @@ else
   echo "[5/5] UserPromptSubmit hook registered"
 fi
 
+# Immediately load the first headline into the spinner
+bash "$ROTATE_SH" 2>/dev/null || true
+
 echo ""
 echo "=== Installation complete! ==="
 echo ""
