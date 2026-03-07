@@ -4,7 +4,6 @@
 import argparse
 import json
 import logging
-import os
 import sys
 from pathlib import Path
 
@@ -43,9 +42,15 @@ def log_fetch(
     pool_size_before: int,
     added: int,
     pool_size_after: int,
-    new_headlines: list,
+    headlines_json_path: str,
 ) -> dict:
     # OUTPUT: what was retrieved
+    new_headlines = []
+    if headlines_json_path and Path(headlines_json_path).exists():
+        try:
+            new_headlines = json.loads(Path(headlines_json_path).read_text())
+        except Exception:
+            pass
     return {
         "keyword_count": len(keywords),
         "added": added,
@@ -56,12 +61,6 @@ def log_fetch(
 
 def main():
     from datetime import datetime, timezone
-
-    api_key = os.environ.get("WANDB_API_KEY")
-    if not api_key:
-        logger.warning("WANDB_API_KEY not set — skipping Weave logging")
-        sys.exit(0)
-    logger.debug("WANDB_API_KEY found (length=%d)", len(api_key))
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--keywords", nargs="+", default=[])
@@ -74,13 +73,6 @@ def main():
     args = parser.parse_args()
 
     logger.info("Logging fetch: keywords=%s since=%r added=%d", args.keywords, args.since, args.added)
-
-    new_headlines = []
-    if args.headlines_json and Path(args.headlines_json).exists():
-        try:
-            new_headlines = json.loads(Path(args.headlines_json).read_text())
-        except Exception as e:
-            logger.warning("Could not read headlines file: %s", e)
 
     locale = {"hl": "ja", "gl": "JP", "ceid": "JP:ja"}
     if args.config and Path(args.config).exists():
@@ -109,7 +101,7 @@ def main():
         pool_size_before=args.pool_size_before,
         added=args.added,
         pool_size_after=args.pool_size_after,
-        new_headlines=new_headlines,
+        headlines_json_path=args.headlines_json,
     )
     logger.info("Weave log_fetch completed: %s", json.dumps(result, ensure_ascii=False))
 
