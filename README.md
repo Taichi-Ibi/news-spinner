@@ -61,11 +61,10 @@ It also appends news-spinner-specific ignore rules to your project's `.gitignore
 /news-spinner                        # interactive: ask for keywords
 /news-spinner AI                     # fetch headlines for "AI"
 /news-spinner Claude ChatGPT Gemini  # fetch multiple keywords at once
-/news-spinner --since 2026-03-01 AI  # fetch headlines since a date
+/news-spinner AI --since 2026-03-01  # fetch headlines since a date
 /news-spinner clear                  # clear the spinner pool
 /news-spinner weave on               # enable W&B Weave tracking
 /news-spinner weave off              # disable W&B Weave tracking
-/news-spinner uninstall              # safely uninstall and remove the skill directory
 ```
 
 ### Via shell
