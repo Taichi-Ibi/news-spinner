@@ -26,6 +26,19 @@ else
   fi
 fi
 
+# Remove empty-object backup files (legacy "{}" backups)
+removed_empty_baks=0
+for bak in "$SETTINGS".bak.*; do
+  [ -f "$bak" ] || continue
+  if jq -e 'type == "object" and length == 0' "$bak" > /dev/null 2>&1; then
+    rm -f "$bak"
+    removed_empty_baks=$((removed_empty_baks + 1))
+  fi
+done
+if [ "$removed_empty_baks" -gt 0 ]; then
+  echo "      Removed empty settings backups: $removed_empty_baks"
+fi
+
 # Restore .gitignore even if skill uninstall script is missing
 gitignore_rules=(
   "# NewsSpinner (auto-added)"

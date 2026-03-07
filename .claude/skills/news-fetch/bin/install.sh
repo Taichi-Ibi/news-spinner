@@ -52,11 +52,15 @@ fi
 echo "[4/4] Data files initialized"
 
 # 5. Register UserPromptSubmit hook in project settings.json
+settings_created=false
 if [ ! -f "$SETTINGS" ]; then
   echo '{}' > "$SETTINGS"
+  settings_created=true
 fi
 
-cp "$SETTINGS" "$SETTINGS.bak.$(date +%Y%m%d%H%M%S)"
+if [ "$settings_created" = false ]; then
+  cp "$SETTINGS" "$SETTINGS.bak.$(date +%Y%m%d%H%M%S)"
+fi
 
 if jq -e '.hooks.UserPromptSubmit[]?.hooks[]? | select(.command | contains("rotate.sh"))' "$SETTINGS" > /dev/null 2>&1; then
   echo "[5/5] NewsSpinner hook already registered"
