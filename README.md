@@ -37,13 +37,13 @@ After fetching real news with `/news-spinner <keyword>`:
 ```bash
 git clone https://github.com/Taichi-Ibi/news-spinner.git
 cd news-spinner
-curl -fsSL https://raw.githubusercontent.com/Taichi-Ibi/news-spinner/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Taichi-Ibi/news-spinner/main/.claude/skills/news-spinner/bin/install.sh | bash
 ```
 
 Or if you already have a `.claude/` directory in your project:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Taichi-Ibi/news-spinner/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Taichi-Ibi/news-spinner/main/.claude/skills/news-spinner/bin/install.sh | bash
 ```
 
 The installer downloads the skill into your project's `.claude/skills/` directory. All settings and runtime data are stored under `.claude/skills/news-spinner/runtime/` (gitignored).
@@ -211,13 +211,13 @@ Claude Code の spinnerVerbs（推論中に表示される「Working…」等の
 ```bash
 git clone https://github.com/Taichi-Ibi/news-spinner.git
 cd news-spinner
-curl -fsSL https://raw.githubusercontent.com/Taichi-Ibi/news-spinner/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Taichi-Ibi/news-spinner/main/.claude/skills/news-spinner/bin/install.sh | bash
 ```
 
 または既に `.claude/` ディレクトリがあるプロジェクトなら：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Taichi-Ibi/news-spinner/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Taichi-Ibi/news-spinner/main/.claude/skills/news-spinner/bin/install.sh | bash
 ```
 
 **インストール後、Claude Code を再起動してください（hook を有効化するため）。**
