@@ -67,6 +67,7 @@ It also appends NewsSpinner-specific ignore rules to your project's `.gitignore`
 /news-fetch remove AI    # remove the feed
 /news-fetch list         # show registered feeds
 /news-fetch fetch        # fetch new headlines
+/news-fetch uninstall    # safely uninstall and remove the skill directory
 ```
 
 #### Via shell
@@ -283,6 +284,7 @@ curl -fsSL https://raw.githubusercontent.com/Taichi-Ibi/NewsSpinner/main/install
 /news-fetch remove AI    → フィードを削除
 /news-fetch list         → 登録済み一覧
 /news-fetch fetch        → ニュース取得
+/news-fetch uninstall    → 安全にアンインストールしてスキルディレクトリも削除
 ```
 
 #### ニュースモード — シェルから直接

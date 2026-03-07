@@ -4,8 +4,7 @@ description: >
   Fetch Google News headlines into the NewsSpinner spinner pool.
   Trigger when user wants to fetch news headlines, search keywords, or manage spinner content.
   Keywords: spinner, news, fetch, headline, ニュース, フィード
-argument-hint: "[--since YYYY-MM-DD] <keyword> [keyword2 ...]"
-disable-model-invocation: true
+argument-hint: "<keyword> [--since YYYY-MM-DD]"
 allowed-tools: Bash, AskUserQuestion
 ---
 
@@ -31,6 +30,16 @@ bash "${CLAUDE_SKILL_DIR}/bin/install.sh"
 ### No arguments (`$ARGUMENTS` is empty)
 
 Use AskUserQuestion to ask the user which keyword(s) to fetch.
+
+### `uninstall`
+
+Use AskUserQuestion to confirm uninstall. If user confirms:
+
+```bash
+bash "${CLAUDE_SKILL_DIR}/bin/uninstall.sh"
+```
+
+Tell the user this removes the hook/runtime data and deletes `.claude/skills/news-fetch/`.
 
 ### `<keyword> [keyword2 ...]` or `[--since YYYY-MM-DD] <keyword> ...`
 
