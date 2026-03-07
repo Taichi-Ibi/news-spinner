@@ -18,27 +18,20 @@ if [ ! -f "$CONFIG" ]; then
 fi
 
 MAX_POOL_SIZE=$(jq -r '.max_pool_size // 50' "$CONFIG")
-MAX_TITLE_LEN=$(jq -r '.max_title_length // 40' "$CONFIG")
 
 usage() {
   cat <<'EOF'
-Usage: fetch.sh [command] [arguments]
+Usage: fetch.sh [--since YYYY-MM-DD] <keyword> [keyword2 ...]
+       fetch.sh clear
+       fetch.sh help
 
-Commands:
-  add <keyword>     Add a Google News feed for the keyword
-  remove <keyword>  Remove a feed by keyword
-  list              List registered feeds
-  clear             Empty pool.json (clear all headlines)
-  help              Show this help message
-  (no command)      Fetch headlines from all registered feeds
+Options:
+  --since YYYY-MM-DD  Only include articles published on or after this date
 
 Examples:
-  fetch.sh add AI
-  fetch.sh add "Claude Code"
-  fetch.sh remove AI
-  fetch.sh list
+  fetch.sh Claude ChatGPT Gemini
+  fetch.sh --since 2026-03-01 高市
   fetch.sh clear
-  fetch.sh              # fetch all feeds
 EOF
 }
 
@@ -54,24 +47,6 @@ urlencode() {
   done
 }
 
-# Validate keyword: reject empty, excessively long, or control-char-laden input
-validate_keyword() {
-  local keyword="$1"
-  if [ -z "$keyword" ]; then
-    echo "Error: keyword must not be empty." >&2
-    return 1
-  fi
-  if [ "${#keyword}" -gt 100 ]; then
-    echo "Error: keyword is too long (max 100 characters)." >&2
-    return 1
-  fi
-  # Reject control characters (except space)
-  if [[ "$keyword" =~ [[:cntrl:]] ]]; then
-    echo "Error: keyword contains invalid characters." >&2
-    return 1
-  fi
-}
-
 # Build Google News RSS URL from keyword
 build_url() {
   local keyword="$1"
@@ -84,82 +59,47 @@ build_url() {
   echo "${base_url}?q=${encoded}&hl=${hl}&gl=${gl}&ceid=${ceid}"
 }
 
-# Subcommand: add a feed
-cmd_add() {
-  local keyword="$1"
-  validate_keyword "$keyword"
-
-  if jq -e --arg k "$keyword" '.feeds[] | select(.keyword == $k)' "$CONFIG" > /dev/null 2>&1; then
-    echo "Feed for '$keyword' already exists."
-    return 0
-  fi
-
-  local url
-  url=$(build_url "$keyword")
-  jq --arg k "$keyword" --arg u "$url" \
-    '.feeds += [{"keyword": $k, "url": $u}]' \
-    "$CONFIG" > "$CONFIG.tmp" && mv "$CONFIG.tmp" "$CONFIG"
-  echo "Added feed: '$keyword'"
+# Convert RSS pubDate ("Sat, 01 Mar 2026 10:00:00 GMT") to YYYY-MM-DD
+pubdate_to_ymd() {
+  local pubdate="$1"
+  [ -z "$pubdate" ] && echo "" && return
+  local day month_name year month
+  day=$(echo "$pubdate" | awk '{print $2}')
+  month_name=$(echo "$pubdate" | awk '{print $3}')
+  year=$(echo "$pubdate" | awk '{print $4}')
+  case "$month_name" in
+    Jan) month="01" ;; Feb) month="02" ;; Mar) month="03" ;;
+    Apr) month="04" ;; May) month="05" ;; Jun) month="06" ;;
+    Jul) month="07" ;; Aug) month="08" ;; Sep) month="09" ;;
+    Oct) month="10" ;; Nov) month="11" ;; Dec) month="12" ;;
+    *) echo "" ; return ;;
+  esac
+  printf '%s-%s-%02d\n' "$year" "$month" "$((10#$day))"
 }
 
-# Subcommand: remove a feed
-cmd_remove() {
-  local keyword="$1"
-  validate_keyword "$keyword"
-
-  if ! jq -e --arg k "$keyword" '.feeds[] | select(.keyword == $k)' "$CONFIG" > /dev/null 2>&1; then
-    echo "Feed for '$keyword' not found."
-    return 1
-  fi
-  jq --arg k "$keyword" '.feeds = [.feeds[] | select(.keyword != $k)]' \
-    "$CONFIG" > "$CONFIG.tmp" && mv "$CONFIG.tmp" "$CONFIG"
-  echo "Removed feed: '$keyword'"
-}
-
-# Subcommand: list feeds
-cmd_list() {
-  local count
-  count=$(jq '.feeds | length' "$CONFIG")
-  if [ "$count" -eq 0 ]; then
-    echo "No feeds registered. Use 'fetch.sh add <keyword>' to add one."
-    return 0
-  fi
-  echo "Registered feeds ($count):"
-  jq -r '.feeds[] | "  [\(.keyword)] \(.url)"' "$CONFIG"
-}
-
-# Truncate title if needed
-truncate_title() {
-  local title="$1"
-  if [ "${#title}" -gt "$MAX_TITLE_LEN" ]; then
-    echo "${title:0:$((MAX_TITLE_LEN - 1))}…"
-  else
-    echo "$title"
-  fi
-}
-
-# Extract article titles from RSS XML
-# Works with both multi-line and single-line (compact) XML
-extract_titles() {
+# Extract pubDate<TAB>title pairs from RSS XML (compact/single-line items)
+extract_items() {
   local xml="$1"
-  # Extract only titles inside <item> elements to skip channel/image titles
-  echo "$xml" | grep -oE '<item>.*</item>' \
-    | tr '<' '\n' \
-    | grep '^title>' \
-    | sed 's/^title>//' \
-    | sed 's/<!\[CDATA\[//;s/\]\]>//'
+  echo "$xml" | sed -E 's/<\/item>/&\n/g' | grep -E '^<item>' | while IFS= read -r item; do
+    local title pubdate
+    title=$(echo "$item" | tr '<' '\n' | grep '^title>' | head -1 \
+      | sed 's/^title>//' | sed 's/<!\[CDATA\[//;s/\]\]>//')
+    pubdate=$(echo "$item" | grep -oE '<pubDate>[^<]*</pubDate>' | head -1 \
+      | sed 's/<pubDate>//;s/<\/pubDate>//')
+    [ -n "$title" ] && printf '%s\t%s\n' "$pubdate" "$title"
+  done
 }
 
 do_fetch() {
-  local feed_count
-  feed_count=$(jq -r '.feeds | length' "$CONFIG")
+  local start_date="$1"
+  shift
+  local keywords=("$@")
 
-  if [ "$feed_count" -eq 0 ]; then
-    echo "No feeds registered. Use 'fetch.sh add <keyword>' to add one."
-    exit 0
+  if [ "${#keywords[@]}" -eq 0 ]; then
+    echo "No keywords specified. Usage: fetch.sh <keyword> [keyword2 ...]" >&2
+    exit 1
   fi
 
-  # Load pool and history into shell variables for fast dedup
   local pool_json history_json
   pool_json=$(cat "$POOL")
   history_json=$(cat "$HISTORY")
@@ -167,11 +107,13 @@ do_fetch() {
   local added=0
   local pool_size
   pool_size=$(echo "$pool_json" | jq 'length')
+  local pool_full=false
 
-  for (( i = 0; i < feed_count; i++ )); do
-    local url keyword xml
-    url=$(jq -r ".feeds[$i].url" "$CONFIG")
-    keyword=$(jq -r ".feeds[$i].keyword" "$CONFIG")
+  for keyword in "${keywords[@]}"; do
+    [ "$pool_full" = true ] && break
+
+    local url xml
+    url=$(build_url "$keyword")
 
     echo "Fetching: $keyword ..."
 
@@ -181,9 +123,8 @@ do_fetch() {
     }
 
     local new_titles=()
-    local pool_full=false
 
-    while IFS= read -r raw_title; do
+    while IFS=$'\t' read -r pub_raw raw_title; do
       [ -z "$raw_title" ] && continue
 
       # Trim whitespace
@@ -191,9 +132,18 @@ do_fetch() {
       raw_title="${raw_title%"${raw_title##*[![:space:]]}"}"
       [ -z "$raw_title" ] && continue
 
+      # Filter by start_date
+      if [ -n "$start_date" ]; then
+        local article_ymd
+        article_ymd=$(pubdate_to_ymd "$pub_raw")
+        if [ -n "$article_ymd" ] && [[ "$article_ymd" < "$start_date" ]]; then
+          continue
+        fi
+      fi
+
       local title="$raw_title"
 
-      # Fast dedup check via jq on cached JSON
+      # Dedup check
       if echo "$pool_json" | jq -e --arg t "$title" 'index($t) != null' > /dev/null 2>&1; then
         continue
       fi
@@ -202,7 +152,6 @@ do_fetch() {
       fi
 
       new_titles+=("$title")
-      # Update in-memory pool for subsequent dedup
       pool_json=$(echo "$pool_json" | jq --arg t "$title" '. + [$t]')
       pool_size=$((pool_size + 1))
       added=$((added + 1))
@@ -212,16 +161,13 @@ do_fetch() {
         pool_full=true
         break
       fi
-    done < <(extract_titles "$xml")
+    done < <(extract_items "$xml")
 
-    # Batch-write new titles for this feed
     if [ "${#new_titles[@]}" -gt 0 ]; then
       local batch
       batch=$(printf '%s\n' "${new_titles[@]}" | jq -R . | jq -s .)
       jq --argjson new "$batch" '. + $new' "$POOL" > "$POOL.tmp" && mv "$POOL.tmp" "$POOL"
     fi
-
-    [ "$pool_full" = true ] && break
   done
 
   local total
@@ -229,19 +175,24 @@ do_fetch() {
   echo "Added $added new headline(s). Pool size: $total"
 }
 
-# Parse subcommands
+# Parse --since option
+START_DATE=""
+POSITIONAL=()
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --since)
+      START_DATE="${2:-}"
+      [[ "$START_DATE" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || {
+        echo "Error: --since requires a date in YYYY-MM-DD format" >&2; exit 1
+      }
+      shift 2
+      ;;
+    *) POSITIONAL+=("$1"); shift ;;
+  esac
+done
+set -- "${POSITIONAL[@]+"${POSITIONAL[@]}"}"
+
 case "${1:-}" in
-  add)
-    [ -z "${2:-}" ] && { echo "Error: keyword required. Usage: fetch.sh add <keyword>" >&2; exit 1; }
-    cmd_add "$2"
-    ;;
-  remove)
-    [ -z "${2:-}" ] && { echo "Error: keyword required. Usage: fetch.sh remove <keyword>" >&2; exit 1; }
-    cmd_remove "$2"
-    ;;
-  list)
-    cmd_list
-    ;;
   clear)
     echo '[]' > "$POOL"
     echo "Pool cleared."
@@ -250,20 +201,18 @@ case "${1:-}" in
     usage
     ;;
   "")
+    usage
+    exit 1
+    ;;
+  *)
     if command -v flock > /dev/null 2>&1; then
       exec 9>"$LOCK"
       flock -w 10 9 || { echo "Error: Could not acquire lock." >&2; exit 1; }
-      do_fetch
+      do_fetch "$START_DATE" "$@"
       exec 9>&-
     else
-      do_fetch
+      do_fetch "$START_DATE" "$@"
     fi
-    # Update spinner immediately after fetch
     bash "$SCRIPT_DIR/rotate.sh" 2>/dev/null || true
-    ;;
-  *)
-    echo "Error: unknown command '$1'" >&2
-    usage
-    exit 1
     ;;
 esac

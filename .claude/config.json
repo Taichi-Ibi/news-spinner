@@ -1,22 +1,4 @@
 {
-  "feeds": [
-    {
-      "keyword": "Claude",
-      "url": "https://news.google.com/rss/search?q=Claude&hl=ja&gl=JP&ceid=JP:ja"
-    },
-    {
-      "keyword": "ChatGPT",
-      "url": "https://news.google.com/rss/search?q=ChatGPT&hl=ja&gl=JP&ceid=JP:ja"
-    },
-    {
-      "keyword": "Gemini",
-      "url": "https://news.google.com/rss/search?q=Gemini&hl=ja&gl=JP&ceid=JP:ja"
-    },
-    {
-      "keyword": "Qwen",
-      "url": "https://news.google.com/rss/search?q=Qwen&hl=ja&gl=JP&ceid=JP:ja"
-    }
-  ],
   "base_url": "https://news.google.com/rss/search",
   "default_params": {
     "hl": "ja",
@@ -24,8 +6,7 @@
     "ceid": "JP:ja"
   },
   "max_pool_size": 1000,
-  "max_title_length": 40,
   "empty_messages": [
-    "No news... run /news-fetch"
+    "No news... run /news-fetch <keyword>"
   ]
 }

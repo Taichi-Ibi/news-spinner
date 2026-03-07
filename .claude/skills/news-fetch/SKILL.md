@@ -1,22 +1,19 @@
 ---
 name: news-fetch
 description: >
-  Manage Google News RSS feeds for the NewsSpinner spinner.
-  Trigger when user wants to add/remove news keywords, fetch headlines,
-  or check spinner feed status. Keywords: spinner, news, feed, headline, ニュース, フィード
-argument-hint: "[add|remove|list|fetch|clear] [keyword]"
+  Fetch Google News headlines into the NewsSpinner spinner pool.
+  Trigger when user wants to fetch news headlines, search keywords, or manage spinner content.
+  Keywords: spinner, news, fetch, headline, ニュース, フィード
+argument-hint: "[--since YYYY-MM-DD] <keyword> [keyword2 ...]"
 disable-model-invocation: true
 allowed-tools: Bash, AskUserQuestion
 ---
 
-# NewsSpinner — News Feed Management
+# NewsSpinner — News Fetch
 
 Replace Claude Code's spinner text with Google News headlines.
 
 ## Current Status
-
-Registered feeds:
-!`bash "${CLAUDE_SKILL_DIR}/bin/fetch.sh" list 2>/dev/null || echo "Not installed"`
 
 Pool remaining:
 !`SPINNER_DIR="$(cd "${CLAUDE_SKILL_DIR}/../../.." && pwd)" && jq 'length' "$SPINNER_DIR/pool.json" 2>/dev/null || echo "0"`
@@ -33,40 +30,23 @@ bash "${CLAUDE_SKILL_DIR}/bin/install.sh"
 
 ### No arguments (`$ARGUMENTS` is empty)
 
-Use AskUserQuestion to let the user choose an action:
-1. Add a feed — ask for a keyword, then run `add`
-2. Remove a feed — show the current list and let them choose
-3. List feeds
-4. Fetch headlines
+Use AskUserQuestion to ask the user which keyword(s) to fetch.
 
-### `add <keyword>`
+### `<keyword> [keyword2 ...]` or `[--since YYYY-MM-DD] <keyword> ...`
 
 ```bash
-bash "${CLAUDE_SKILL_DIR}/bin/fetch.sh" add "$1"
+bash "${CLAUDE_SKILL_DIR}/bin/fetch.sh" $ARGUMENTS
 ```
 
-- After adding, ask "Fetch headlines now?" and run fetch if yes:
+Parse keywords and optional `--since` from `$ARGUMENTS` and pass them directly.
+
+Examples:
+- `Claude ChatGPT Gemini` → fetch all three
+- `--since 2026-03-01 高市` → fetch 高市 news from March 1st onward
+- `高市 この1週間` → interpret "この1週間" as `--since <7 days ago>` and run:
   ```bash
-  bash "${CLAUDE_SKILL_DIR}/bin/fetch.sh"
+  bash "${CLAUDE_SKILL_DIR}/bin/fetch.sh" --since <YYYY-MM-DD> 高市
   ```
-
-### `remove <keyword>`
-
-```bash
-bash "${CLAUDE_SKILL_DIR}/bin/fetch.sh" remove "$1"
-```
-
-### `list`
-
-```bash
-bash "${CLAUDE_SKILL_DIR}/bin/fetch.sh" list
-```
-
-### `fetch`
-
-```bash
-bash "${CLAUDE_SKILL_DIR}/bin/fetch.sh"
-```
 
 ### `clear`
 

@@ -34,26 +34,29 @@ NewsSpinner replaces the "Working…" spinner verbs shown during Claude Code inf
 
 ## Installation
 
-### News mode (Google News headlines)
+### Quick Install (one-liner)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Taichi-Ibi/NewsSpinner/main/install.sh | bash
+```
+
+This downloads and installs both modes to `~/.claude/skills/`. You'll be prompted to choose between News mode and Joke Ads mode.
+
+### Manual Install
+
+Clone the repository and run the install script from within the project directory:
 
 ```bash
 git clone https://github.com/Taichi-Ibi/NewsSpinner.git
 cd NewsSpinner
-bash skills/news-fetch/bin/install.sh              # no initial keywords
-bash skills/news-fetch/bin/install.sh AI LLM        # with initial keywords
+bash install.sh
 ```
 
-### Joke Ads mode (fake sponsor ads)
+All settings and runtime data are stored in the project's `.claude/` directory.
 
-```bash
-git clone https://github.com/Taichi-Ibi/NewsSpinner.git
-cd NewsSpinner
-bash skills/joke-ads/bin/install.sh
-```
+**Restart Claude Code after installation to activate the hook.**
 
-Restart Claude Code after installation to activate the hook.
-
-> **Note:** Both modes share `~/.newsspinner/` and the same `PostToolUse` hook. Install one at a time, or uninstall the other first.
+> **Note:** Both modes share the project's `.claude/` directory and the same `PostToolUse` hook. Install one at a time, or uninstall the other first.
 
 ## Usage
 
@@ -72,11 +75,11 @@ Restart Claude Code after installation to activate the hook.
 #### Via shell
 
 ```bash
-~/.newsspinner/bin/fetch.sh add "AI"
-~/.newsspinner/bin/fetch.sh add "Claude Code"
-~/.newsspinner/bin/fetch.sh list
-~/.newsspinner/bin/fetch.sh remove "AI"
-~/.newsspinner/bin/fetch.sh                         # fetch all feeds
+bash .claude/skills/news-fetch/bin/fetch.sh add "AI"
+bash .claude/skills/news-fetch/bin/fetch.sh add "Claude Code"
+bash .claude/skills/news-fetch/bin/fetch.sh list
+bash .claude/skills/news-fetch/bin/fetch.sh remove "AI"
+bash .claude/skills/news-fetch/bin/fetch.sh          # fetch all feeds
 ```
 
 ### Joke Ads mode
@@ -96,11 +99,11 @@ Restart Claude Code after installation to activate the hook.
 #### Via shell
 
 ```bash
-~/.newsspinner/bin/ads.sh list                      # list all ads
-~/.newsspinner/bin/ads.sh add "🍣 スシロー — 回転寿司のように回転するコード"
-~/.newsspinner/bin/ads.sh load                      # load ads into pool
-~/.newsspinner/bin/ads.sh --skip-ads                # "skip" ads (try it!)
-~/.newsspinner/bin/ads.sh premium                   # go premium (try it!)
+bash .claude/skills/joke-ads/bin/ads.sh list
+bash .claude/skills/joke-ads/bin/ads.sh add "🍣 スシロー — 回転寿司のように回転するコード"
+bash .claude/skills/joke-ads/bin/ads.sh load
+bash .claude/skills/joke-ads/bin/ads.sh --skip-ads   # "skip" ads (try it!)
+bash .claude/skills/joke-ads/bin/ads.sh premium      # go premium (try it!)
 ```
 
 ### Joke Ads — hidden features
@@ -123,9 +126,9 @@ Restart Claude Code after installation to activate the hook.
 Google News RSS
      │
      ▼
-  fetch.sh ──▶ pool.json ──▶ rotate.sh ──▶ spinnerVerbs
-                                ▲
-                      PostToolUse hook
+  fetch.sh ──▶ .claude/pool.json ──▶ rotate.sh ──▶ spinnerVerbs
+                                          ▲
+                                PostToolUse hook
 ```
 
 ### Joke Ads mode
@@ -135,19 +138,29 @@ Google News RSS
 3. **rotate.sh** — Same mechanism: picks a random ad from the pool on every tool call.
 
 ```
-ads.json (local)
+.claude/ads.json (local)
      │
      ▼
-  ads.sh ──▶ pool.json ──▶ rotate.sh ──▶ spinnerVerbs
-                              ▲
-                    PostToolUse hook
+  ads.sh ──▶ .claude/pool.json ──▶ rotate.sh ──▶ spinnerVerbs
+                                        ▲
+                              PostToolUse hook
 ```
 
 ## Configuration
 
+All runtime data is stored in the project's `.claude/` directory:
+
+| File | Description |
+|------|-------------|
+| `.claude/settings.json` | Claude Code settings (hook registered here) |
+| `.claude/config.json` | NewsSpinner configuration |
+| `.claude/pool.json` | Current spinner headline/ad pool |
+| `.claude/history.json` | Previously shown headlines/ads |
+| `.claude/ads.json` | Joke Ads source file (ads mode only) |
+
 ### News mode
 
-After installation, edit `~/.newsspinner/config.json`:
+Edit `.claude/config.json`:
 
 | Key | Default | Description |
 |-----|---------|-------------|
@@ -183,7 +196,7 @@ To switch to English (US) news, update the locale parameters:
 | `premium_messages` | `[...]` | Snarky messages for premium users |
 | `skip_ads_messages` | `[...]` | Messages when --skip-ads is used |
 
-Custom ads can be added to `~/.newsspinner/ads.json` directly or via `ads.sh add`.
+Custom ads can be added to `.claude/ads.json` directly or via `ads.sh add`.
 
 ## Project Structure
 
@@ -191,32 +204,42 @@ Custom ads can be added to `~/.newsspinner/ads.json` directly or via `ads.sh add
 NewsSpinner/
 ├── LICENSE
 ├── README.md
-├── skills/news-fetch/             # News mode
-│   ├── SKILL.md
-│   ├── config.json
-│   └── bin/
-│       ├── install.sh
-│       ├── uninstall.sh
-│       ├── fetch.sh
-│       └── rotate.sh
-└── skills/joke-ads/               # Joke Ads mode (NEW!)
-    ├── SKILL.md
-    ├── config.json
-    ├── ads.json                   # hardcoded fake sponsor ads
-    └── bin/
-        ├── install.sh
-        ├── uninstall.sh
-        ├── ads.sh                 # ad management & joke features
-        └── rotate.sh
+└── .claude/
+    ├── settings.json              # Claude Code project settings
+    ├── skills/
+    │   ├── news-fetch/            # News mode
+    │   │   ├── SKILL.md
+    │   │   ├── config.json        # default config template
+    │   │   └── bin/
+    │   │       ├── install.sh
+    │   │       ├── uninstall.sh
+    │   │       ├── fetch.sh
+    │   │       └── rotate.sh
+    │   └── joke-ads/              # Joke Ads mode
+    │       ├── SKILL.md
+    │       ├── config.json        # default config template
+    │       ├── ads.json           # hardcoded fake sponsor ads
+    │       └── bin/
+    │           ├── install.sh
+    │           ├── uninstall.sh
+    │           ├── ads.sh
+    │           └── rotate.sh
+    │
+    │   (created by install.sh)
+    ├── config.json                # runtime config
+    ├── pool.json                  # spinner pool
+    ├── history.json               # shown headlines/ads
+    └── ads.json                   # ads source (joke-ads mode)
 ```
 
 ## Uninstall
 
 ```bash
-~/.newsspinner/bin/uninstall.sh
+bash .claude/skills/news-fetch/bin/uninstall.sh   # news mode
+bash .claude/skills/joke-ads/bin/uninstall.sh     # joke-ads mode
 ```
 
-This removes all installed files, the Claude Code hook, and spinner overrides.
+This removes the Claude Code hook, spinner overrides, and runtime data files from `.claude/`.
 
 ---
 
@@ -226,6 +249,8 @@ Claude Code の spinnerVerbs（推論中に表示される「Working…」等の
 
 **NEW: ジョーク広告モード** — スピナーに架空のスポンサー広告を表示してウケを狙えます。`--skip-ads`（広告が倍増）、Premiumモード（何も起きない）、`ad_frequency`設定（完全に無視される）などのジョーク機能付き。
 
+設定・データはすべてプロジェクトの `.claude/` ディレクトリに保存されます。
+
 ### 必要なもの
 
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI
@@ -233,24 +258,27 @@ Claude Code の spinnerVerbs（推論中に表示される「Working…」等の
 
 ### インストール
 
-#### ニュースモード
+#### ワンライナー（推奨）
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Taichi-Ibi/NewsSpinner/main/install.sh | bash
+```
+
+このコマンドで `~/.claude/skills/` に両モードをインストールします。実行時にニュースモードとジョーク広告モードのどちらかを選択できます。
+
+#### 手動インストール
+
+リポジトリをクローンし、プロジェクトディレクトリ内でインストールスクリプトを実行します：
 
 ```bash
 git clone https://github.com/Taichi-Ibi/NewsSpinner.git
 cd NewsSpinner
-bash skills/news-fetch/bin/install.sh              # キーワードなし
-bash skills/news-fetch/bin/install.sh AI LLM        # キーワード付き
+bash install.sh
 ```
 
-#### ジョーク広告モード
+設定・データはすべてプロジェクトの `.claude/` ディレクトリに保存されます。
 
-```bash
-git clone https://github.com/Taichi-Ibi/NewsSpinner.git
-cd NewsSpinner
-bash skills/joke-ads/bin/install.sh
-```
-
-インストール後、Claude Code を再起動してください（hook を有効化するため）。
+**インストール後、Claude Code を再起動してください（hook を有効化するため）。**
 
 ### 使い方
 
@@ -267,11 +295,11 @@ bash skills/joke-ads/bin/install.sh
 #### ニュースモード — シェルから直接
 
 ```bash
-~/.newsspinner/bin/fetch.sh add "AI"
-~/.newsspinner/bin/fetch.sh add "Claude Code"
-~/.newsspinner/bin/fetch.sh list
-~/.newsspinner/bin/fetch.sh remove "AI"
-~/.newsspinner/bin/fetch.sh                         # 全フィードからニュース取得
+bash .claude/skills/news-fetch/bin/fetch.sh add "AI"
+bash .claude/skills/news-fetch/bin/fetch.sh add "Claude Code"
+bash .claude/skills/news-fetch/bin/fetch.sh list
+bash .claude/skills/news-fetch/bin/fetch.sh remove "AI"
+bash .claude/skills/news-fetch/bin/fetch.sh                  # 全フィードからニュース取得
 ```
 
 #### ジョーク広告モード — Claude Code スキル（推奨）
@@ -288,11 +316,11 @@ bash skills/joke-ads/bin/install.sh
 #### ジョーク広告モード — シェルから直接
 
 ```bash
-~/.newsspinner/bin/ads.sh list                      # 全広告の一覧
-~/.newsspinner/bin/ads.sh add "🍣 スシロー — 回転寿司のように回転するコード"
-~/.newsspinner/bin/ads.sh load                      # 広告をプールに読み込み
-~/.newsspinner/bin/ads.sh --skip-ads                # 広告を「スキップ」（試してみて！）
-~/.newsspinner/bin/ads.sh premium                   # Premium化（試してみて！）
+bash .claude/skills/joke-ads/bin/ads.sh list
+bash .claude/skills/joke-ads/bin/ads.sh add "🍣 スシロー — 回転寿司のように回転するコード"
+bash .claude/skills/joke-ads/bin/ads.sh load
+bash .claude/skills/joke-ads/bin/ads.sh --skip-ads           # 広告を「スキップ」（試してみて！）
+bash .claude/skills/joke-ads/bin/ads.sh premium              # Premium化（試してみて！）
 ```
 
 #### ジョーク広告の隠し機能
@@ -303,24 +331,11 @@ bash skills/joke-ads/bin/install.sh
 | `premium` | 広告なし体験 | 皮肉なメッセージが出て広告はそのまま |
 | `ad_frequency` | 広告頻度の制御 | 設定値は完全に無視される |
 
-### 仕組み
-
-#### ニュースモード
-
-1. **fetch.sh** — Google News RSS からヘッドラインを取得し `pool.json` に蓄積
-2. **rotate.sh** — `PostToolUse` hook として登録。ツール実行のたびにプールからランダムに1件選び spinner に表示
-3. プールが空になると設定済みのプレースホルダーメッセージを表示
-
-#### ジョーク広告モード
-
-1. **ads.json** — ハードコードされた架空スポンサー広告のプール（カスタム追加可能）
-2. **ads.sh** — `ads.json` から `pool.json` へ広告を読み込み。追加/削除/Premium/--skip-ads を処理
-3. **rotate.sh** — 同じ仕組み：ツール実行のたびにプールからランダムに1件選び spinner に表示
-
 ### アンインストール
 
 ```bash
-~/.newsspinner/bin/uninstall.sh
+bash .claude/skills/news-fetch/bin/uninstall.sh   # ニュースモード
+bash .claude/skills/joke-ads/bin/uninstall.sh     # ジョーク広告モード
 ```
 
 ## License

@@ -1,5 +1,4 @@
 {
-  "feeds": [],
   "base_url": "https://news.google.com/rss/search",
   "default_params": {
     "hl": "ja",
@@ -7,8 +6,7 @@
     "ceid": "JP:ja"
   },
   "max_pool_size": 50,
-  "max_title_length": 40,
   "empty_messages": [
-    "No news... run /news-fetch"
+    "No news... run /news-fetch <keyword>"
   ]
 }
