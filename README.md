@@ -37,22 +37,18 @@ NewsSpinner replaces the "Working…" spinner verbs shown during Claude Code inf
 ### Quick Install (one-liner)
 
 ```bash
+git clone https://github.com/Taichi-Ibi/NewsSpinner.git
+cd NewsSpinner
 curl -fsSL https://raw.githubusercontent.com/Taichi-Ibi/NewsSpinner/main/install.sh | bash
 ```
 
-This downloads and installs both modes to `~/.claude/skills/`. You'll be prompted to choose between News mode and Joke Ads mode.
-
-### Manual Install
-
-Clone the repository and run the install script from within the project directory:
+Or if you already have a `.claude/` directory in your project:
 
 ```bash
-git clone https://github.com/Taichi-Ibi/NewsSpinner.git
-cd NewsSpinner
-bash install.sh
+curl -fsSL https://raw.githubusercontent.com/Taichi-Ibi/NewsSpinner/main/install.sh | bash
 ```
 
-All settings and runtime data are stored in the project's `.claude/` directory.
+The installer downloads skills into your project's `.claude/skills/` directory. All settings and runtime data are stored in `.claude/`.
 
 **Restart Claude Code after installation to activate the hook.**
 
@@ -261,22 +257,18 @@ Claude Code の spinnerVerbs（推論中に表示される「Working…」等の
 #### ワンライナー（推奨）
 
 ```bash
+git clone https://github.com/Taichi-Ibi/NewsSpinner.git
+cd NewsSpinner
 curl -fsSL https://raw.githubusercontent.com/Taichi-Ibi/NewsSpinner/main/install.sh | bash
 ```
 
-このコマンドで `~/.claude/skills/` に両モードをインストールします。実行時にニュースモードとジョーク広告モードのどちらかを選択できます。
-
-#### 手動インストール
-
-リポジトリをクローンし、プロジェクトディレクトリ内でインストールスクリプトを実行します：
+または既に `.claude/` ディレクトリがあるプロジェクトなら：
 
 ```bash
-git clone https://github.com/Taichi-Ibi/NewsSpinner.git
-cd NewsSpinner
-bash install.sh
+curl -fsSL https://raw.githubusercontent.com/Taichi-Ibi/NewsSpinner/main/install.sh | bash
 ```
 
-設定・データはすべてプロジェクトの `.claude/` ディレクトリに保存されます。
+インストーラーはスキルをプロジェクトの `.claude/skills/` にダウンロードします。設定・データはすべて `.claude/` ディレクトリに保存されます。
 
 **インストール後、Claude Code を再起動してください（hook を有効化するため）。**
 

@@ -5,7 +5,6 @@ set -euo pipefail
 
 REPO="Taichi-Ibi/NewsSpinner"
 BRANCH="main"
-DEST="${HOME}/.claude"
 
 echo "=== NewsSpinner Installer ==="
 
@@ -21,21 +20,40 @@ if [ "${#missing[@]}" -gt 0 ]; then
 fi
 echo "[1/4] Dependencies OK (jq, curl)"
 
-# 2. Download repo and extract skills
+# 2. Check if in a project with .claude/
+if [ ! -d ".claude" ]; then
+  echo "Error: .claude/ directory not found" >&2
+  echo ""
+  echo "This installer expects to run in a project directory with .claude/" >&2
+  echo "You can either:"
+  echo "  1. Clone the repo first:"
+  echo "       git clone https://github.com/${REPO}.git"
+  echo "       cd NewsSpinner"
+  echo "       bash install.sh"
+  echo ""
+  echo "  2. Initialize .claude/ in your current project:"
+  echo "       mkdir -p .claude"
+  echo "       curl -fsSL https://raw.githubusercontent.com/${REPO}/raw/${BRANCH}/install.sh | bash"
+  echo ""
+  exit 1
+fi
+echo "[2/4] Found .claude/ directory"
+
+# 3. Download repo and extract skills
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
-echo "[2/4] Downloading skills from GitHub..."
+echo "[3/4] Downloading skills from GitHub..."
 curl -fsSL "https://github.com/${REPO}/archive/refs/heads/${BRANCH}.tar.gz" \
   | tar xz -C "$TMP" --strip-components=1
 
-# 3. Copy .claude/skills/ to ~/.claude/skills/
-mkdir -p "$DEST/skills"
-cp -r "$TMP/.claude/skills/." "$DEST/skills/"
-echo "[3/4] Skills installed to $DEST/skills/"
+# 4. Copy .claude/skills/ to ./.claude/skills/
+mkdir -p ".claude/skills"
+cp -r "$TMP/.claude/skills/." ".claude/skills/"
+echo "       Skills installed to ./.claude/skills/"
 
-# 4. Run skill installer(s)
-for install_sh in "$DEST/skills"/*/bin/install.sh; do
+# 5. Run skill installer(s)
+for install_sh in ".claude/skills"/*/bin/install.sh; do
   [ -f "$install_sh" ] || continue
   bash "$install_sh"
 done
@@ -47,3 +65,4 @@ echo ""
 echo "Quick start in Claude Code:"
 echo "  /news-fetch add AI      # add a feed"
 echo "  /news-fetch fetch       # fetch headlines"
+echo ""
